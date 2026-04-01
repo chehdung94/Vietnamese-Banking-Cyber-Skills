@@ -339,35 +339,16 @@ Agent Response:
 ---
 ## 🔍 Kích hoạt: conducting-memory-forensics-with-volatility
 
-### Prerequisites
-- [x] Memory dump: C:\Forensics\mem.dmp
-- [x] Volatility 3 installed
-- [x] Profile identified: Win10x64_19041
-
-### Step 1: Process Analysis
+### Step 1: Process & Network Analysis
 ```bash
 vol -f mem.dmp windows.pslist.PsList
-```
-
-### Step 2: Network Connections
-```bash
 vol -f mem.dmp windows.netscan.Netscan
-```
-
-### Step 3: DLL Injection Detection
-```bash
 vol -f mem.dmp windows.malfind.Malfind
 ```
 
 ### Findings
-⚠️ **Suspicious Process Detected:**
-- Process ID: 4532
-- Name: update.exe
-- Parent: notepad.exe (anomalous)
-- MITRE ATT&CK: T1055 (Process Injection)
+⚠️ **Suspicious Process Detected:** update.exe (PID: 4532, Parent: notepad.exe) - MITRE ATT&CK: T1055
 ```
-
----
 
 ---
 
