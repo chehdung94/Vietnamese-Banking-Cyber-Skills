@@ -23,7 +23,6 @@
 - [Architecture](#-architecture)
 - [Skill Catalog](#-skill-catalog)
 - [Quick Start](#-quick-start)
-- [Installation](#-installation)
 - [Usage Examples](#-usage-examples)
 - [Vietnamese Banking Compliance](#-vietnamese-banking-compliance)
 - [Contributing](#-contributing)
