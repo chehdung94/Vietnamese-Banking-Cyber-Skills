@@ -52,16 +52,16 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         TIER 1: MASTER PLAYBOOK                      │
+│                         TIER 1: MASTER PLAYBOOK                     │
 │              (Entry Point • Triage • Severity Classification)       │
-│                    playbook-master-incident-triage                   │
+│                    playbook-master-incident-triage                  │
 └─────────────────────────────────────────────────────────────────────┘
                                     │
                     ┌───────────────┼───────────────┐
                     ▼               ▼               ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    TIER 2: INCIDENT PLAYBOOKS                       │
-│         (Checklist • Communication Plan • Interim Recommendations)   │
+│         (Checklist • Communication Plan • Interim Recommendations)  │
 │   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
 │   │  Phishing    │  │  Malware     │  │  Insider     │              │
 │   │  Response    │  │  Response    │  │  Threat      │              │
@@ -71,12 +71,12 @@
                     ┌───────────────┼───────────────┐
                     ▼               ▼               ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    TIER 3: TECHNICAL SKILLS                          │
+│                    TIER 3: TECHNICAL SKILLS                         │
 │              (Tool Execution • Artifact Analysis • DFIR)            │
-│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐       │
-│  │ Volatility │ │ Wireshark  │ │  Varonis   │ │ EZ Tools   │       │
-│  │  Memory    │ │  Network   │ │   UEBA     │ │  Windows   │       │
-│  └────────────┘ └────────────┘ └────────────┘ └────────────┘       │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐        │
+│  │ Volatility │ │ Wireshark  │ │  Varonis   │ │ EZ Tools   │        │
+│  │  Memory    │ │  Network   │ │   UEBA     │ │  Windows   │        │
+│  └────────────┘ └────────────┘ └────────────┘ └────────────┘        │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -218,9 +218,6 @@ cd Vietnamese-Banking-Cyber-Skills
 # Gọi Technical Skill trực tiếp
 "Phân tích memory dump với Volatility - conducting-memory-forensics-with-volatility"
 ```
-
----
-
 ---
 
 ## 💡 Usage Examples
@@ -285,7 +282,6 @@ vol -f mem.dmp windows.malfind.Malfind
 ⚠️ **Suspicious Process Detected:** update.exe (PID: 4532, Parent: notepad.exe) - MITRE ATT&CK: T1055
 
 ```
-
 ---
 
 ## ⚖️ Vietnamese Banking Compliance
