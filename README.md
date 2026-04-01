@@ -340,19 +340,19 @@ Agent Response:
 ## 🔍 Kích hoạt: conducting-memory-forensics-with-volatility
 
 ### Process & Network Analysis
-```bash
+
 vol -f mem.dmp windows.pslist.PsList
 vol -f mem.dmp windows.netscan.Netscan
 vol -f mem.dmp windows.malfind.Malfind
-```
 
 ### Findings
 ⚠️ **Suspicious Process Detected:** update.exe (PID: 4532, Parent: notepad.exe) - MITRE ATT&CK: T1055
+
 ```
 
 ---
 
-## 🇻🇳 Vietnamese Banking Compliance
+## ⚖️ Vietnamese Banking Compliance
 
 *Hướng dẫn tuân thủ pháp luật Việt Nam cho ứng phó sự cố an ninh mạng ngân hàng*
 
