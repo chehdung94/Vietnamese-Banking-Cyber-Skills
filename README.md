@@ -11,7 +11,7 @@
 <p align="center">
   <strong>Bộ thư viện kỹ năng An ninh mạng cho AI Agents</strong><br/>
   <em>Incident Response • Digital Forensics • Threat Hunting</em><br/>
-  <a href="https://agentskills.io">agentskills.io</a> • <a href="https://github.com/mukul975/Anthropic-Cybersecurity-Skills">Reference: mukul975/Anthropic-Cybersecurity-Skills</a>
+  <a href="https://agentskills.io">agentskills.io</a> 
 </p>
 
 ---
