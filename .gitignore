@@ -1,0 +1,31 @@
+# Drafts - Skills đang phát triển
+# Không push lên GitHub
+skills/_drafts/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Compiled files
+*.pyc
+__pycache__/
+*.class
+
+# Downloaded tools (if any)
+tools/
+bin/
