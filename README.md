@@ -5,13 +5,13 @@
   <img src="https://img.shields.io/badge/Architecture-3--Tier-blue?style=for-the-badge" alt="Architecture" />
   <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-Mapped-orange?style=for-the-badge" alt="MITRE ATT&CK" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=for-the-badge" alt="License" />
-  <img src="https://img.shields.io/badge/Compliance-Nghị%20định%2013%2F2023-purple?style=for-the-badge" alt="Vietnamese Compliance" />
+  <img src="https://img.shields.io/badge/Compliance-Nghị%20định%20356%2F2025-purple?style=for-the-badge" alt="Vietnamese Compliance" />
 </p>
 
 <p align="center">
   <strong>Bộ thư viện kỹ năng An ninh mạng cho AI Agents</strong><br/>
   <em>Incident Response • Digital Forensics • Threat Hunting</em><br/>
-  <a href="https://agentskills.io">agentskills.io</a> • <a href="https://github.com/mukul975/Anthropic-Cybersecurity-Skills">Reference: mukul975/Anthropic-Cybersecurity-Skills</a>
+  <a href="https://agentskills.io">agentskills.io</a> 
 </p>
 
 ---
@@ -41,7 +41,7 @@
 |----------|-------|
 | **Chuẩn hóa IR** | Cung cấp quy trình IR đồng nhất cho đội ngũ an ninh |
 | **Tự động hóa** | Hỗ trợ AI Agent thực hiện triage, analysis, và containment |
-| **Tuân thủ pháp luật** | Tích hợp Nghị định 13/2023/NĐ-CP và quy định NHNN |
+| **Tuân thủ pháp luật** | Tích hợp Nghị định 356/2025/NĐ-CP, Luật BVTTDL 2024 và quy định NHNN |
 | **MITRE ATT&CK** | Ánh xạ kỹ năng với framework ATT&CK phổ biến |
 
 ---
