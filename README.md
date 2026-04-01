@@ -371,64 +371,49 @@ vol -f mem.dmp windows.malfind.Malfind
 
 ## 🇻🇳 Vietnamese Banking Compliance
 
-### Supported Regulations
+### Quick Reference: Nghị định 356/2025/NĐ-CP
 
-| Regulation | Description | Coverage |
-|------------|-------------|----------|
-| **Nghị định 356/2025/NĐ-CP** | Hướng dẫn Luật Bảo vệ Dữ liệu Cá nhân (có hiệu lực 01/07/2025) | PDP compliance |
-| **Luật Bảo vệ Dữ liệu Cá nhân 2024** | Luật số 32/2024/QH15 | PDP compliance |
-| **Luật An ninh mạng 2018** | Luật ATTT lĩnh vực ngân hàng | ANM compliance |
-| **QĐ 18/2020/QĐ-TTg** | Tiêu chuẩn kỹ thuật ANTT | Technical standards |
-| **Thông tư 13/2020/TT-NHNN** | ANTT cho thanh toán điện tử | Payment security |
-| **Nghị định 13/2023/NĐ-CP** | Đã được thay thế bởi NĐ 356/2025/NĐ-CP | ⚠️ Deprecated |
+> **Có hiệu lực: 01/07/2025** • Thay thế Nghị định 13/2023/NĐ-CP
 
-### Key Changes in Nghị định 356/2025/NĐ-CP
+| Thời hạn | Hành động |
+|----------|-----------|
+| **T+0** | Phát hiện sự cố |
+| **T+36 giờ** | Thông báo Cơ quan chức năng & Người dùng bị ảnh hưởng |
+| **T+72 giờ** | Đánh giá tác động (DPIA) |
+| **T+30 ngày** | Báo cáo điều tra & Kế hoạch khắc phục |
 
-Nghị định 356/2025/NĐ-CP có hiệu lực từ **01/07/2025**, thay thế hoàn toàn Nghị định 13/2023/NĐ-CP với các điểm mới quan trọng:
+### Điểm mới chính
 
-| Nội dung | NĐ 13/2023 (Đã thay thế) | NĐ 356/2025 (Hiệu lực) |
-|----------|---------------------------|-------------------------|
-| **Thời hạn thông báo vi phạm** | 24 giờ | 36 giờ |
-| **Xử phạt vi phạm hành chính** | Tối đa 100 triệu VNĐ | Tối đa 200 triệu VNĐ |
-| **Quyền của DPO** | Quy định chung | Chi tiết hơn về quyền và nhiệm vụ |
-| **Hồ sơ xử lý dữ liệu** | Yêu cầu cơ bản | Mở rộng, bao gồm DPIA |
-| **Chuyển dữ liệu ra nước ngoài** | Cần sự đồng ý | Quy trình phê duyệt bổ sung (Điều 54) |
+- ⏱️ **Thời hạn thông báo:** 24h → **36 giờ**
+- 💰 **Xử phạt vi phạm:** 100 triệu → **200 triệu VNĐ**
+- 📋 **DPIA bắt buộc** cho xử lý dữ liệu nhạy cảm
+- 🌐 **Chuyển dữ liệu ra nước ngoài:** Cần phê duyệt bổ sung (Điều 54)
 
-### Compliance Checklist
+### Liên quan pháp luật
+
+| Văn bản | Hiệu lực |
+|---------|----------|
+| **Luật BVTTDL 2024** (32/2024/QH15) | Luật gốc |
+| **Nghị định 356/2025/NĐ-CP** | Hướng dẫn chi tiết (01/07/2025) |
+| **Luật An ninh mạng 2018** | ANM compliance |
+| **Thông tư 13/2020/TT-NHNN** | ANTT cho thanh toán điện tử |
+
+### Checklist
 
 ```markdown
-## Vietnamese Banking Compliance Checklist
+## Compliance Checklist
 
-### Nghị định 356/2025/NĐ-CP & Luật BVTTDL 2024
-- [ ] Thông báo vi phạm trong vòng 36 giờ (trước đây là 24h)
-- [ ] Đánh giá tác động bảo vệ dữ liệu (DPIA) được thực hiện
-- [ ] Hồ sơ xử lý dữ liệu cá nhân được cập nhật
-- [ ] Đơn vị phụ trách bảo vệ dữ liệu (DPO) được chỉ định
-- [ ] Quy trình xin phê duyệt chuyển dữ liệu ra nước ngoài có sẵn
+### Nghị định 356/2025/NĐ-CP
+- [ ] Thông báo vi phạm trong 36 giờ
+- [ ] DPIA được thực hiện
+- [ ] DPO được chỉ định
+- [ ] Hồ sơ xử lý dữ liệu cá nhân cập nhật
 
-### Luật An ninh mạng 2018
-- [ ] Báo cáo sự cố đến cơ quan chức năng (trong 24h cho sự cố nghiêm trọng)
-- [ ] Bằng chứng được bảo quản phục vụ điều tra
-- [ ] Điều tra nội bộ được ghi chép đầy đủ
+### Luật An ninh mạng
+- [ ] Báo cáo cơ quan chức năng (24h cho sự cố nghiêm trọng)
+- [ ] Bằng chứng được bảo quản
+- [ ] Điều tra nội bộ được ghi chép
 - [ ] Kế hoạch khắc phục được phê duyệt
-
-### Quy định NHNN
-- [ ] SOC được thông báo
-- [ ] Phân loại sự cố (P1-P4)
-- [ ] Lãnh đạo được thông báo (cho P1-P2)
-- [ ] Báo cáo cuối cùng được nộp
-```
-
-### Data Breach Response Timeline (NĐ 356/2025)
-
-```
-T+0 (Phát hiện)
-    │
-    ├─ T+36 giờ: Thông báo đến Cơ quan chức năng & Người dùng bị ảnh hưởng
-    │
-    ├─ T+72 giờ: Đánh giá tác động ban đầu (DPIA)
-    │
-    └─ T+30 ngày: Báo cáo điều tra chi tiết & Kế hoạch khắc phục
 ```
 
 ---
