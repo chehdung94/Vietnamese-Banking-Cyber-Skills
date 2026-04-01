@@ -369,7 +369,11 @@ vol -f mem.dmp windows.malfind.Malfind
 
 ---
 
+---
+
 ## 🇻🇳 Vietnamese Banking Compliance
+
+*Hướng dẫn tuân thủ pháp luật Việt Nam cho ứng phó sự cố an ninh mạng ngân hàng*
 
 ### Quick Reference: Nghị định 356/2025/NĐ-CP
 
