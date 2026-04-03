@@ -25,6 +25,7 @@
 - [Quick Start](#-quick-start)
 - [Usage Examples](#-usage-examples)
 - [Vietnamese Banking Compliance](#-vietnamese-banking-compliance)
+- [Documentation](#-documentation)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -334,7 +335,25 @@ vol -f mem.dmp windows.malfind.Malfind
 
 ---
 
-## 🤝 Contributing
+## 📚 Documentation
+
+| Tài liệu | Mô tả |
+|----------|-------|
+| [`docs/LLM-Architecture-2025.md`](docs/LLM-Architecture-2025.md) | Hướng dẫn chọn model, tối ưu context window, chi phí |
+| [`skills/ARCHITECTURE.md`](skills/ARCHITECTURE.md) | Chi tiết 3-tier architecture |
+| [`system-prompt.md`](system-prompt.md) | System prompt cho AI Agent |
+
+### 💡 Tips sử dụng AI Agent hiệu quả
+
+1. **Viết prompt rõ ràng** - Càng cụ thể, kết quả càng chính xác
+2. **Chia nhỏ tác vụ** - AI làm tốt hơn khi từng bước nhỏ
+3. **Cung cấp context** - Đưa đủ thông tin nền tảng
+4. **Kiểm tra output** - Luôn verify kết quả AI trả về
+5. **Dùng định dạng rõ ràng** - JSON, Markdown, Tables giúp AI hiểu tốt hơn
+
+---
+
+##  Contributing
 
 ### Adding New Skills
 
