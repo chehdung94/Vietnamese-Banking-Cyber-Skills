@@ -6,6 +6,55 @@
 
 ---
 
+## 📚 AI/LLM Terminology Guide
+
+*Giải thích ngắn gọn các thuật ngữ AI thường gặp*
+
+### 🧠 Model Parameters
+
+| Thuật ngữ | Giải thích | Ví dụ |
+|-----------|------------|-------|
+| **Context Window** | Số tokens tối đa AI có thể "nhớ" trong một cuộc hội thoại | Claude 3.5: 200K tokens ≈ 150.000 từ tiếng Việt |
+| **Max Output Tokens** | Số tokens tối đa AI có thể tạo ra trong một lần trả lời | Thường 4K-8K tokens |
+| **Temperature** | Độ "sáng tạo" của câu trả lời (0-1) | 0 = chính xác, 1 = sáng tạo |
+| **Top-p / Top-k** | Kiểm soát độ đa dạng của câu trả lời | Top-p 0.9 = chọn từ trong top 90% xác suất |
+
+### 🔤 Token là gì?
+
+> **Token** là đơn vị cơ bản AI dùng để xử lý văn bản
+
+| Ngôn ngữ | Ví dụ | Số tokens |
+|----------|-------|-----------|
+| Tiếng Anh | "Hello world" | ~2 tokens |
+| Tiếng Việt | "Xin chào" | ~3-4 tokens |
+| Code | `print("hello")` | ~4 tokens |
+
+**Quy tắc ước tính:**
+- Tiếng Anh: ~0.75 từ/token
+- Tiếng Việt: ~0.5-0.7 từ/token (dấu tiếng Việt tốn thêm tokens)
+
+### 🛠️ AI Agent Concepts
+
+| Thuật ngữ | Giải thích |
+|-----------|------------|
+| **System Prompt** | Hướng dẫn "tính cách" và nhiệm vụ của AI Agent |
+| **Skill** | Module chuyên biệt để thực hiện một tác vụ cụ thể |
+| **Tool Calling** | AI gọi hàm/tool bên ngoài (đọc file, chạy lệnh...) |
+| **RAG** | Retrieval-Augmented Generation - AI tra cứu tài liệu rồi trả lời |
+| **Few-shot** | Đưa AI xem vài ví dụ trước khi yêu cầu làm việc tương tự |
+| **Chain-of-Thought** | Yêu cầu AI "suy nghĩ" từng bước trước khi trả lời |
+
+### 📊 Performance Metrics
+
+| Thuật ngữ | Ý nghĩa |
+|-----------|---------|
+| **Latency** | Thời gian phản hồi (ms) |
+| **Throughput** | Số request xử lý/giây |
+| **Hallucination** | AI "bịa" thông tin không có thật |
+| **Prompt Injection** | Tấn công điều khiển AI bằng input độc hại |
+
+---
+
 ## 📋 Tổng quan
 
 Tài liệu này cung cấp khuyến nghị chi tiết về việc lựa chọn AI model, Context Window Size, và Max Output Token cho từng tier của skill trong hệ thống Vietnamese-Banking-Cyber-Skills.
