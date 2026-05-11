@@ -4,7 +4,7 @@ description: Analyzes Data Loss Prevention (DLP) alerts from Microsoft Purview, 
 domain: cybersecurity
 subdomain: data-loss-prevention
 tags: [DLP, data-leak, exfiltration, Microsoft Purview, Varonis, alerts, incident-response]
-version: "1.0"
+version: "1.1"
 author: cybersecurity-skills-mode
 license: Apache-2.0
 mitre_attack: [T1041, T1074, T1115]
@@ -147,6 +147,37 @@ Get-DlpDetailReport -StartDate "2024-01-01" -EndDate "2024-01-31" |
 | Login from unusual location | Azure AD sign-in logs |
 | Large data downloads | Varonis file activity |
 | After-hours activity | SIEM time analysis |
+
+---
+
+## 3B. Multi-Source Timeline Correlation 🆕
+
+> **Khi có ≥2 nguồn log (Device Control + Endpoint Security + Web Gateway):**
+
+### Correlation Procedure
+
+1. Tạo unified timeline từ tất cả nguồn log
+2. Sắp xếp theo timestamp tăng dần
+3. Đánh dấu các event cách nhau < 1 giờ → potential causal relationship
+4. Tạo correlation chain nếu event sequence có logic (VD: DLP block → virus detected → access violation)
+
+### Correlation Rules
+
+| Trigger Event | Follow-up Event | Time Window | Assessment |
+|---|---|---|---|
+| DLP Block (USB) | Virus Detected (Endpoint) | < 1 giờ | 🔴 CRITICAL: USB mang malware |
+| DLP Block (USB) | Access Protection Violation | < 1 giờ | 🔴 CRITICAL: User cố tình bypass control |
+| DLP Block (USB) | OUTGOING_HTTP | < 24 giờ | 🟠 HIGH: Potential data staging |
+| Web Filter Block | SMTP email to same domain | < 24 giờ | 🟠 HIGH: User switching channel |
+
+### DLP Effectiveness Assessment
+
+| Protection Layer | Events | Blocked | Allowed (Gap) | Assessment |
+|---|---|---|---|---|
+| Device Control | | | | |
+| Email DLP | | | | |
+| Web Filter | | | | |
+| Endpoint Protection | | | | |
 
 ---
 

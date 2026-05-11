@@ -4,7 +4,7 @@ description: Analyzes email audit logs from Exchange Online, Microsoft 365, or o
 domain: cybersecurity
 subdomain: email-security
 tags: [email, Exchange, M365, audit-logs, exfiltration, BEC, phishing, data-leak]
-version: "1.0"
+version: "1.1"
 author: cybersecurity-skills-mode
 license: Apache-2.0
 mitre_attack: [T1114, T1566, T1041]
@@ -131,6 +131,63 @@ Get-MessageTrace -StartDate (Get-Date).AddDays(-7) |
     } |
     Select-Object Received, SenderAddress, RecipientAddress, Subject
 ```
+
+---
+
+## 2B. Email Direction Classification 🆕
+
+> **⚠️ BẮT BUỘC:** Phân loại hướng email trước khi đánh giá rủi ro. Không gộp chung INBOUND và OUTBOUND.
+
+| Direction | Definition | Risk Context | Example |
+|---|---|---|---|
+| ⬅ **INBOUND** | External → Company | Self-forwarding, data staging. Không phải exfiltration | Gmail cá nhân → hộp thư công ty |
+| ➡ **OUTBOUND** | Company → External | **POTENTIAL EXFILTRATION** – cần điều tra khẩn | Hộp thư công ty → Gmail cá nhân |
+| ↔ **MIXED** | Both directions in thread | Context-dependent – kiểm tra từng email trong thread | Thread có cả internal và external |
+| ➡ **OUTBOUND CC** | Company → External CC | Rủi ro thấp hơn nếu main recipients là internal | CC Gmail cá nhân trong email công việc |
+
+## 2C. Domain Classification & Whitelist 🆕
+
+> **Trước khi phân tích, thiết lập whitelist domain.**
+
+| Category | Examples | Treatment |
+|---|---|---|
+| **Internal** | @company.com.vn | ✅ Exclude from risk |
+| **Banking Partners** | bidv.com.vn, sacombank.com, napas.com.vn, vietcombank.com.vn... | ✅ Exclude from risk (whitelist) |
+| **Known Vendors** | microsoft.com, amazon.com, service providers | ✅ Exclude from risk |
+| **Personal Domains** | gmail.com, yahoo.com, outlook.com, icloud.com, proton.me | 🔴 **FLAG – HIGH RISK** |
+| **Unknown** | All other external domains | 🟡 Flag for review |
+
+## 2D. Standalone Email Detection (EXFILTRATION INDICATOR) 🆕
+
+**Mục đích:** Phát hiện email gửi RIÊNG đến personal domain, không có internal/partner recipients trong To/CC/BCC.
+
+**Phương pháp:**
+```
+1. FILTER: Tất cả email có personal domain trong recipients (Gmail, Yahoo, Outlook...)
+2. CHECK: Email có @company.com hoặc whitelisted partner domain trong To/CC/BCC không?
+3. CLASSIFY:
+   - YES → "Contextual" (có ngữ cảnh công việc – LOWER RISK)
+   - NO  → "STANDALONE" (chỉ gửi đến Gmail cá nhân – HIGH RISK)
+4. DIRECTION:
+   - OUTBOUND standalone → EXFILTRATION
+   - INBOUND standalone → Self-forwarding
+5. CROSS-USER (nếu ≥2 users): Kiểm tra Gmail của User A có trong mailbox User B không
+```
+
+**Output mẫu:**
+| User | 2026 Emails | Standalone | OUTBOUND | INBOUND | Cross-User |
+|---|---|---|---|---|---|
+| luannt0500 | 30,947 | 4 | 2 | 2 | – |
+| tanvn | 49,901 | 1 | 1 | 0 | → thanhluan22022@gmail.com 🔴 |
+
+## 2E. Cross-Mailbox Analysis (COLLUSION DETECTION) 🆕
+
+**Khi điều tra ≥2 users:**
+
+1. Trích xuất tất cả external email của từng user
+2. Tìm personal Gmail của User A xuất hiện trong recipients của User B
+3. Flag nếu phát hiện cross-mailbox standalone communication
+4. Đối chiếu timeline để xác định coordinated activity
 
 ---
 

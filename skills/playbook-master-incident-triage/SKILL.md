@@ -4,7 +4,7 @@ description: Master playbook to classify and prioritize security incidents, dete
 domain: cybersecurity
 subdomain: incident-response
 tags: [playbook, master, triage, severity-classification, routing, DFIR]
-version: "1.1"
+version: "1.2"
 author: cybersecurity-skills-mode
 license: Apache-2.0
 ---
@@ -54,6 +54,7 @@ Incident triaging is the critical first step in incident response. This skill pr
 - [ ] Unauthorized access attempt (blocked)
 - [ ] Policy violation with potential impact
 - [ ] Social engineering attempt detected
+- [ ] Pre-departure review: user with sensitive data access + HR notification
 
 ### P4 - Low
 - [ ] Failed brute force attempts
@@ -102,6 +103,7 @@ Based on the initial assessment, route the incident to the appropriate Tier 2 Pl
 | **Malware/Ransomware** | File encryption, unknown processes, C2 traffic | `playbook-malware-response` |
 | **Data Leak** | Unauthorized access, large data transfer | `playbook-data-leak-response` |
 | **Insider Threat** | Abnormal behavior by authenticated user | `playbook-insider-threat-response` |
+| **Pre-Departure Review** | HR notification, offboarding, preventive compliance review | `playbook-abnormal-user-behavior-response` |
 | **General/Unknown** | P1/P2 Active attack but type unknown | Escalate to CIRT, Isolate systems |
 
 ### Step 4: Initiate Tier 2 Playbook
