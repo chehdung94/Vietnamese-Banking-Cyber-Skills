@@ -4,7 +4,7 @@ description: Tier 2 Playbook to respond to abnormal user behavior incidents dete
 domain: cybersecurity
 subdomain: incident-response
 tags: [playbook, tier-2, UEBA, abnormal-behavior, insider-threat, Varonis, incident-response, DFIR]
-version: "1.1"
+version: "1.2"
 author: cybersecurity-skills-mode
 license: Apache-2.0
 mitre_attack: [T1074, T1114, T1098, T1526]
@@ -90,6 +90,29 @@ Triggered by the **Master Incident Triage** playbook when an incident is classif
 - **High (14-20):** Priority investigation, enhanced monitoring
 - **Medium (7-13):** Standard investigation
 - **Low (0-6):** Monitor, potential false positive
+
+### 3.1.1 Scoring Calibration Guide
+
+> **⚠️ BẮT BUỘC:** Mỗi điểm phải có rationale từ log/evidence cụ thể. Không gán điểm dựa trên "cảm nhận".
+
+| Indicator | 0-3 (Low Evidence) | 4-6 (Moderate) | 7-10 (Strong Evidence) |
+|---|---|---|---|
+| **Recent HR Event** | No HR event | Resignation submitted, standard offboarding | Resignation + disciplinary issues + sensitive data access |
+| **Access to Sensitive Data** | No sensitive access | Indirect access (reports only) | Direct CRUD access to customer PII/financial data |
+| **Unusual Data Volume** | No anomaly | Minor deviation (<2x baseline) | Major deviation (>5x baseline); multi-channel pattern |
+| **Off-Hours Activity** | None | Occasional (<5/month) | Regular pattern; critical-timing events around resignation date |
+| **Personal Device Usage** | None | Blocked attempts (Evidence=0) | Successful data copy; user ignores DLP block; multiple device types |
+| **External Communication** | Business partners only | Unusual volume/timing to partners | Personal Gmail/Yahoo with attachments; standalone (no internal recipients) |
+| **Job Performance Issues** | No info; satisfactory | Verbal warning | PIP or documented disciplinary action |
+
+### 3.1.2 Scoring Rules (BẮT BUỘC)
+
+- [ ] Mỗi điểm có rationale cụ thể (dòng log, timestamp, event ID)
+- [ ] Điểm nằm trong phạm vi cho phép (không vượt max: 10/10/5/5/5/3/3)
+- [ ] **Tổng = tổng trực tiếp 7 indicators. Không áp dụng "cap".** Phân loại dựa trên ngưỡng.
+- [ ] Đã phân biệt "DLP BLOCKED (không mất dữ liệu)" vs "SUCCESSFUL exfiltration"
+- [ ] Cross-user correlation đã thực hiện nếu ≥2 users
+- [ ] Qualitative context được tách riêng (Section 3.5), không cộng vào official score
 
 ### 3.2 Behavioral Red Flags Checklist
 - [ ] User download lượng lớn dữ liệu khách hàng (hàng ngàn records)
@@ -239,6 +262,91 @@ Phân tích:
 | [ ] | **Windows Event Logs** (Security 4656, 4663) | File open/modify operations |
 | [ ] | **DLP Alerts** | Sensitive data access triggers |
 | [ ] | **Cloud Storage Logs** | OneDrive/SharePoint sync activity |
+
+---
+
+## 3C. Cross-User Correlation (COLLUSION DETECTION) 🆕
+
+> **Kích hoạt:** Khi có ≥2 users trong cùng scope điều tra. Nếu chỉ có 1 user, bỏ qua section này.
+
+### 3C.1 Collusion Detection Procedure
+
+1. **Lập intersection matrix:** Xác định mối quan hệ giữa các user (cùng phòng ban? Cùng dự án? Cùng manager?)
+2. **Communication pattern:** Tìm email giữa các user (nội bộ và ra ngoài)
+3. **Cross-mailbox check (CRITICAL):** Tìm Gmail cá nhân của User A xuất hiện trong recipients của User B (và ngược lại)
+4. **Timeline correlation:** Đối chiếu timeline hoạt động giữa các user – có coordinated activity?
+5. **Shared resources:** Kiểm tra file/folder/application được cả 2 user truy cập
+
+### 3C.2 Collusion Indicators
+
+| Indicator | Severity | Action |
+|---|---|---|
+| User A gửi email standalone đến Gmail cá nhân của User B | 🔴 CRITICAL | Escalate immediately |
+| User A và B có shared external communication pattern (cùng gửi đến 1 Gmail) | 🟠 HIGH | Expand investigation |
+| User A và B hoạt động cùng thời điểm bất thường (off-hours pattern giống nhau) | 🟡 MEDIUM | Flag for review |
+| User A xuất hiện trong mailbox forwarding rules của User B | 🔴 CRITICAL | Escalate immediately |
+
+### 3C.3 Output Example
+
+```json
+{
+  "cross_user_analysis": {
+    "users_in_scope": ["luannt0500", "tanvn"],
+    "relationship": "Same department, both department heads, both departing",
+    "collusion_detected": true,
+    "collusion_events": [{
+      "date": "2026-04-21",
+      "from": "tanvn",
+      "to": "thanhluan22022@gmail.com",
+      "type": "standalone_outbound",
+      "severity": "CRITICAL",
+      "note": "tanvn sent standalone email to luannt0500's personal Gmail"
+    }]
+  }
+}
+```
+
+---
+
+## 3D. DLP Effectiveness Assessment 🆕
+
+> **Áp dụng:** Khi có DLP/Device Control events trong scope.
+
+### 3D.1 DLP Event Classification
+
+| Scenario | DLP Status | Behavioral Risk | Ví dụ từ Case Study |
+|---|---|---|---|
+| **BLOCKED + Evidence=0** | ✅ DLP hoạt động | 🔴 Hành vi cố tình | ADATA HV320 28 phút bị block |
+| **BLOCKED + Evidence>0** | ⚠️ Có lọt một phần | 🔴 CRITICAL | DLP block nhưng data vẫn thoát |
+| **ALLOWED + No policy** | ❌ Lỗ hổng DLP | 🔴 CRITICAL | OneDrive cá nhân không bị chặn |
+| **NOT DETECTED** | ❌ Blind spot | 🔴 CRITICAL | OUTGOING_HTTP bypass proxy |
+
+### 3D.2 DLP Effectiveness Matrix (Output)
+
+| Protection Layer | Total Events | Blocked | Allowed (Gap) | Effectiveness |
+|---|---|---|---|---|
+| Device Control (USB/HDD) | X | X (100%) | 0 | ✅ Effective |
+| Device Control (MTP) | X | X (100%) | 0 | ✅ Effective |
+| Web Filter (mail.google.com) | X | X (100%) | 0 | ✅ Effective |
+| Web Filter (onedrive.live.com) | X | 0 | X (100%) | ❌ Gap: add to block list |
+| Email DLP (SMTP→Gmail) | X | 0 | X (100%) | ❌ Gap: deploy DLP rule |
+| Endpoint (OUTGOING_HTTP) | X | 0 (detected only) | X | ⚠️ Partial: detect but not block |
+
+---
+
+## 3E. Expanded Risk Context (Qualitative) 🆕
+
+> **⚠️ QUAN TRỌNG:** Phần này chứa các phát hiện bổ sung từ multi-source analysis **KHÔNG được cộng vào điểm chính thức** ở Section 3.1.
+
+Các phát hiện dưới đây nằm ngoài phạm vi 7 indicators của Risk Indicators Matrix nhưng hỗ trợ cho kết luận:
+
+| # | Phát hiện | Mức độ | Nguồn | Ghi chú |
+|---|---|---|---|---|
+| E1 | Virus/Malware detected on endpoint | 🔴 CRITICAL | Endpoint Security | Đặc biệt nếu từ USB cá nhân |
+| E2 | Access Protection rule violation by user | 🔴 CRITICAL | Endpoint Security | Hành vi truy cập trái phép |
+| E3 | HTTP traffic bypassing web proxy | 🔴 HIGH | Endpoint + Proxy | Automated/scripted pattern |
+| E4 | Webmail upload attempts (blocked) | 🟠 MEDIUM | Web Gateway | Cho thấy ý định dùng webmail |
+| E5 | Cross-mailbox Gmail appearance (collusion) | 🔴 CRITICAL | Email | Cần investigation mở rộng |
 
 ---
 

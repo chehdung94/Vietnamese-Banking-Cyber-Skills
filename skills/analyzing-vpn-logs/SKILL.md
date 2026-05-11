@@ -4,7 +4,7 @@ description: Analyzes VPN connection logs from firewall, SSL VPN, or network acc
 domain: cybersecurity
 subdomain: network-security
 tags: [vpn, ssl-vpn, network-access, remote-access, connection-analysis, firewall-logs, incident-response, insider-threat]
-version: "1.0"
+version: "1.1"
 author: cybersecurity-skills-mode
 license: Apache-2.0
 mitre_attack: [T1133, T1021, T1078, T1086]
@@ -26,6 +26,20 @@ VPN log analysis is critical for detecting unauthorized remote access, compromis
 - When investigating departing employee cases (insider risk)
 - When correlating VPN logs with other security events (device control, endpoint)
 - When preparing incident investigation reports for compliance
+
+## Pre-Analysis Value Assessment 🆕
+
+> **⚠️ BẮT BUỘC:** Trả lời các câu hỏi sau TRƯỚC KHI phân tích VPN logs. Nếu ≥2 câu trả lời là "Không" → cân nhắc SKIP và ghi rõ lý do.
+
+| # | Câu hỏi | Yes/No |
+|---|---|---|
+| 1 | VPN logs có sẵn cho TẤT CẢ users trong scope không? | |
+| 2 | Có policy VPN off-hours chính thức không? | |
+| 3 | Có thể đối chiếu VPN IP với IP nội bộ của user không? | |
+| 4 | Case có liên quan đến remote access hoặc location-based anomaly không? | |
+| 5 | Có timeline correlation giữa VPN events và events từ nguồn log khác không? | |
+
+**Nếu SKIP:** Ghi vào báo cáo: "VPN analysis was skipped because [lý do]. VPN logs available at [path] for future reference if needed."
 
 ## Prerequisites
 
