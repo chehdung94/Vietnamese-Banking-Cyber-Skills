@@ -10,6 +10,55 @@ description: Investigation methodology for Cedarpelta Build / Live Response Coll
 Use this skill as the investigation brain for Cedarpelta Build / Live Response Collection evidence.
 
 This skill defines how the agent thinks, investigates, pivots, cross-checks, assesses confidence, and controls closure.
+## When to Use
+
+Use this skill when at least one condition is true:
+
+- Cedarpelta Build or Live Response Collection evidence is in scope.
+- Evidence classification or inventory identifies one or more items collected by Cedarpelta or an equivalent live response collector.
+- The investigation needs Cedarpelta-specific artifact coverage review, hypothesis-driven hunting, pivoting, mandatory cross-checking, parser-scoped processing, confidence assessment, follow-up actions, or closure control.
+- A downstream consumer needs Cedarpelta findings, normalized events, unresolved limitations, parser recommendations, or closure signals.
+- A conclusion cannot be trusted until Cedarpelta evidence has been reconciled with other findings, timeline events, report conclusions, or human investigator notes.
+
+Do not use this skill as the primary methodology for SIEM-only, firewall-only, VPN-only, email-only, malware reverse engineering, or generic report-writing tasks unless Cedarpelta evidence is part of the scope. Use it only for the Cedarpelta-specific analysis or reconciliation portion.
+
+## Prerequisites
+
+Required inputs, independent of folder structure:
+
+```text
+analysis request or tasking instruction
+Cedarpelta evidence inventory or evidence list
+Cedarpelta raw evidence location
+artifact classification or collection manifest
+parser recommendation matrix or parser plan
+approved investigation scope
+```
+
+Required conditions:
+
+- Cedarpelta evidence is identified by inventory, classification, collection metadata, file naming, or investigator decision.
+- Original evidence is read-only.
+- A private working area exists for notes, queries, parser commands, and exploratory parsed subsets.
+- A stable output area exists for findings, summaries, normalized events, and downstream handoff artifacts.
+- Parser actions are scoped by hypothesis, artifact group, user, host, time window, Event ID, IOC, or pivot seed.
+- Parser recommendations use normalized complexity values: `direct_ingest`, `light`, `specialized`, or `skip`.
+- Output validation schemas are available from the active repository, bundled skill schemas, or the receiving system contract.
+
+Useful but optional reconciliation inputs:
+
+```text
+intake notes
+initial scope
+triage result
+previous findings
+timeline artifacts
+preliminary or final report drafts
+known benign assets or allowlists
+organization capability or logging profile
+```
+
+Return blocked instead of guessing when the analysis request, evidence inventory, parser plan, raw evidence location, or approved scope is missing.
 
 ## Operating Principle
 
