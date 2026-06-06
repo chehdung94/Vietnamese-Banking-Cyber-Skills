@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Follow Up Action",
+  "type": "object",
+  "required": ["action_id", "priority", "question", "rationale", "evidence_refs", "recommended_data_sources", "recommended_steps", "recommended_owner", "blocks_closure"],
+  "properties": {
+    "action_id": {"type": "string"},
+    "priority": {"enum": ["low", "medium", "high", "critical"]},
+    "question": {"type": "string"},
+    "rationale": {"type": "string"},
+    "evidence_refs": {"type": "array", "items": {"type": "string"}},
+    "recommended_data_sources": {"type": "array", "items": {"type": "string"}},
+    "recommended_steps": {"type": "array", "items": {"type": "string"}},
+    "recommended_owner": {"type": "string"},
+    "blocks_closure": {"type": "boolean"}
+  },
+  "additionalProperties": true
+}

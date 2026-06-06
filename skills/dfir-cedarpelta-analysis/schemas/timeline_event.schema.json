@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cedarpelta Timeline Event",
+  "type": "object",
+  "required": ["timeline_event_id", "case_id", "timestamp", "event_type", "description", "source_agent", "source_artifact", "confidence"],
+  "properties": {
+    "timeline_event_id": {"type": "string"},
+    "case_id": {"type": "string"},
+    "timestamp": {"type": "string"},
+    "host": {"type": "string"},
+    "user": {"type": "string"},
+    "event_type": {"type": "string"},
+    "description": {"type": "string"},
+    "source_agent": {"const": "cedarpelta_analysis"},
+    "source_artifact": {"type": "string"},
+    "source_file": {"type": "string"},
+    "finding_refs": {"type": "array", "items": {"type": "string"}},
+    "hypothesis_refs": {"type": "array", "items": {"type": "string"}},
+    "confidence": {"enum": ["low", "medium", "high"]}
+  },
+  "additionalProperties": true
+}

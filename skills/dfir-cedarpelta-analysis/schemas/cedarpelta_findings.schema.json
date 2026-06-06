@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cedarpelta Findings",
+  "type": "object",
+  "required": [
+    "case_id",
+    "mode",
+    "status",
+    "scope",
+    "artifact_coverage",
+    "hunting_scenarios",
+    "hypotheses",
+    "pivot_chains",
+    "findings",
+    "missing_or_unparsed_evidence",
+    "follow_up_action_items",
+    "supervisor_verification",
+    "recommended_next_modes",
+    "confidence"
+  ],
+  "properties": {
+    "case_id": {"type": "string"},
+    "mode": {"const": "cedarpelta_analysis"},
+    "status": {"enum": ["completed", "partially_completed", "blocked", "failed"]},
+    "scope": {"type": "object"},
+    "artifact_coverage": {"type": "array", "items": {"type": "object"}},
+    "hunting_scenarios": {"type": "array", "items": {"type": "object"}},
+    "hypotheses": {"type": "array", "items": {"type": "object"}},
+    "pivot_chains": {"type": "array", "items": {"type": "object"}},
+    "findings": {"type": "array", "items": {"type": "object"}},
+    "entities": {"type": "object"},
+    "missing_or_unparsed_evidence": {"type": "array", "items": {"type": "object"}},
+    "follow_up_action_items": {"type": "array", "items": {"type": "object"}},
+    "reconciliation_items": {"type": "array", "items": {"type": "object"}},
+    "supervisor_verification": {
+      "type": "object",
+      "required": ["closure_allowed", "closure_blockers"],
+      "properties": {
+        "closure_allowed": {"type": "boolean"},
+        "closure_blockers": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "recommended_next_modes": {"type": "array", "items": {"type": "string"}},
+    "confidence": {"enum": ["low", "medium", "high"]}
+  },
+  "additionalProperties": true
+}
