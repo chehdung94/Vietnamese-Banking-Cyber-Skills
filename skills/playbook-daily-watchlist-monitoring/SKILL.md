@@ -77,10 +77,27 @@ OFF-HOURS:
 
 **Step 4: Remove Noise**
 ```
-REMOVE:
-  - System accounts (SERVICE$, COMPUTER$)
+AD LOGS - REMOVE:
+  - System accounts (SERVICE$, COMPUTER$, $)
+  - TGT authentication events (normal Kerberos ticket renewal - occurs every 10 hours)
+  - Events from service accounts (accounts ending with _svc, _service)
   - Duplicate events (same user, same action, same second)
   - Events from decommissioned systems
+
+EMAIL LOGS - REMOVE:
+  - Received emails (focus on SENT emails for insider threat)
+  - Internal emails (sender and recipient both @company domain)
+  - Auto-generated emails (noreply@, system@, automated@)
+  - Calendar invites and meeting responses
+  - Duplicate events (same message ID)
+
+FILESERVER LOGS - REMOVE:
+  - File opened/read events for normal work files (.lnk, .url, .tmp)
+  - Events from system folders (Windows, Program Files, AppData)
+  - Events from recycle bin ($RECYCLE.BIN)
+  - Shortcut file access (.lnk files)
+  - Duplicate events (same user, same file, same second)
+  - Events from backup/sync processes (OneDrive sync, SharePoint sync)
 ```
 
 ### 1.3 Name Matching Algorithm
