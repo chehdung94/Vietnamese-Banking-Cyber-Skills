@@ -1,0 +1,155 @@
+{
+    "case_id":  "CASE-010",
+    "generated_at":  "2026-06-03T14:10:03.9042286Z",
+    "parser_matrix":  {
+                          "live_response_text":  {
+                                                     "evidence_group":  "live_response_text",
+                                                     "raw_format":  "csv,extensionless,html,txt",
+                                                     "preferred_parser":  "text_table_parser",
+                                                     "alternative_parsers":  [
+
+                                                                             ],
+                                                     "output_format":  "jsonl",
+                                                     "parse_complexity":  "light",
+                                                     "consumer_modes":  [
+
+                                                                        ],
+                                                     "notes":  ""
+                                                 },
+                          "unknown":  {
+                                          "evidence_group":  "unknown",
+                                          "raw_format":  "7db,chk,ebd,etl,ini,jfm,jrs,log,mkd",
+                                          "preferred_parser":  "unknown",
+                                          "alternative_parsers":  [
+
+                                                                  ],
+                                          "output_format":  "jsonl",
+                                          "parse_complexity":  "skip",
+                                          "consumer_modes":  [
+
+                                                             ],
+                                          "notes":  ""
+                                      },
+                          "amcache":  {
+                                          "evidence_group":  "amcache",
+                                          "raw_format":  "hve",
+                                          "preferred_parser":  "amcacheparser",
+                                          "alternative_parsers":  [
+                                                                      "recmd"
+                                                                  ],
+                                          "output_format":  "jsonl",
+                                          "parse_complexity":  "specialized",
+                                          "consumer_modes":  [
+                                                                 "dfir-log-analysis",
+                                                                 "dfir-timeline"
+                                                             ],
+                                          "notes":  ""
+                                      },
+                          "browser_history":  {
+                                                  "evidence_group":  "browser_history",
+                                                  "raw_format":  "extensionless",
+                                                  "preferred_parser":  "sqlecmd",
+                                                  "alternative_parsers":  [
+
+                                                                          ],
+                                                  "output_format":  "jsonl",
+                                                  "parse_complexity":  "specialized",
+                                                  "consumer_modes":  [
+                                                                         "dfir-log-analysis",
+                                                                         "dfir-timeline"
+                                                                     ],
+                                                  "notes":  ""
+                                              },
+                          "usnjrnl":  {
+                                          "evidence_group":  "usnjrnl",
+                                          "raw_format":  "bin",
+                                          "preferred_parser":  "mftecmd",
+                                          "alternative_parsers":  [
+
+                                                                  ],
+                                          "output_format":  "jsonl",
+                                          "parse_complexity":  "specialized",
+                                          "consumer_modes":  [
+                                                                 "dfir-log-analysis",
+                                                                 "dfir-timeline"
+                                                             ],
+                                          "notes":  ""
+                                      },
+                          "windows_event_log":  {
+                                                    "evidence_group":  "windows_event_log",
+                                                    "raw_format":  "evtx",
+                                                    "preferred_parser":  "evtxecmd",
+                                                    "alternative_parsers":  [
+                                                                                "chainsaw",
+                                                                                "hayabusa"
+                                                                            ],
+                                                    "output_format":  "jsonl",
+                                                    "parse_complexity":  "specialized",
+                                                    "consumer_modes":  [
+                                                                           "dfir-log-analysis",
+                                                                           "dfir-timeline"
+                                                                       ],
+                                                    "notes":  ""
+                                                },
+                          "mft":  {
+                                      "evidence_group":  "mft",
+                                      "raw_format":  "extensionless",
+                                      "preferred_parser":  "mftecmd",
+                                      "alternative_parsers":  [
+
+                                                              ],
+                                      "output_format":  "jsonl",
+                                      "parse_complexity":  "specialized",
+                                      "consumer_modes":  [
+                                                             "dfir-log-analysis",
+                                                             "dfir-timeline"
+                                                         ],
+                                      "notes":  ""
+                                  },
+                          "prefetch":  {
+                                           "evidence_group":  "prefetch",
+                                           "raw_format":  "pf",
+                                           "preferred_parser":  "pecmd",
+                                           "alternative_parsers":  [
+
+                                                                   ],
+                                           "output_format":  "jsonl",
+                                           "parse_complexity":  "specialized",
+                                           "consumer_modes":  [
+                                                                  "dfir-log-analysis",
+                                                                  "dfir-timeline"
+                                                              ],
+                                           "notes":  ""
+                                       },
+                          "registry_hive":  {
+                                                "evidence_group":  "registry_hive",
+                                                "raw_format":  "dat,extensionless",
+                                                "preferred_parser":  "recmd",
+                                                "alternative_parsers":  [
+                                                                            "registryexplorer"
+                                                                        ],
+                                                "output_format":  "jsonl",
+                                                "parse_complexity":  "specialized",
+                                                "consumer_modes":  [
+                                                                       "dfir-log-analysis",
+                                                                       "dfir-timeline"
+                                                                   ],
+                                                "notes":  ""
+                                            },
+                          "srum":  {
+                                       "evidence_group":  "srum",
+                                       "raw_format":  "dat",
+                                       "preferred_parser":  "srumecmd",
+                                       "alternative_parsers":  [
+
+                                                               ],
+                                       "output_format":  "jsonl",
+                                       "parse_complexity":  "specialized",
+                                       "consumer_modes":  [
+                                                              "dfir-log-analysis",
+                                                              "dfir-timeline"
+                                                          ],
+                                       "notes":  ""
+                                   }
+                      }
+}
