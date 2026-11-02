@@ -1,0 +1,104 @@
+{
+  "contract_version": "1",
+  "skill": "analyzing-cloud-storage-audit-logs",
+  "calibrated": false,
+  "threshold_note": "calibrated=false -> Jev CHI XEP HANG (thu tu uu tien xu ly), KHONG nang muc do phan cap. Muc P1-P4 chi lay tu ../_shared/severity-and-escalation.md va bang nguong cua skill tai references/thresholds.md. Diem so cua Jev khong duoc dung de quyet dinh muc P1-P4.",
+  "scope": "Xep hang hoat dong cloud storage de sap xep thu tu xu ly. Khong phat hien moi su co, khong thay the phan cap P1-P4, khong tu chay lenh thu hoi token, xoa share hay vo hieu key.",
+  "merge": "max(rule_level, jev_level)",
+  "thresholds": {
+    "cloud_exfil_critical": null,
+    "cloud_exfil_high": null,
+    "score_min": null,
+    "noul_min": null,
+    "_reason": "Chua co bang hieu chinh tren bo du lieu audit cloud cua ngan hang (khong co mau co nhan ket luan). De null de tranh tu dat nguong. Khi co bang do, phai ghi mau so, so mau va ket qua vao file nay truoc khi dung."
+  },
+  "display": {
+    "mass_download": "Tai ve hang loat",
+    "external_sharing": "Chia se ngoai",
+    "personal_cloud_sync": "Dong bo cloud ca nhan",
+    "unusual_location": "Truy cap dia diem la",
+    "credential_exposure": "Khoa cong dung bi lo",
+    "data_sensitive": "Du lieu nhay cam",
+    "theo_doi": "Theo doi",
+    "xem_trong_ngay": "Xem trong ngay",
+    "xem_ngay": "Xem ngay",
+    "khong_can": "Khong can dieu tra them"
+  },
+  "profile_fields": [
+    "user",
+    "platform",
+    "file_count",
+    "download_mb",
+    "upload_mb",
+    "external_shares",
+    "anonymous_link_count",
+    "link_permission",
+    "personal_cloud_destination",
+    "sensitive_file_hits",
+    "unusual_location",
+    "off_hours",
+    "access_key_used"
+  ],
+  "questions": {
+    "mass_download": {
+      "type": "noul",
+      "instructions": "Do the file counts and download volume for this account look like a bulk collection of files rather than normal working access?",
+      "criteria": [
+        "so tep va dung luong vuot nguong phat hien trong references/thresholds.md",
+        "muc truy cap binh thuong hoac khong xac dinh duoc"
+      ]
+    },
+    "external_sharing": {
+      "type": "noul",
+      "instructions": "Do the sharing events show links handed outside the organization, especially links that are open to anyone or grant more than read access?",
+      "criteria": [
+        "co chia se ngoai, link 'anyone with link' hoac quyen sua/toan quyen",
+        "chi chia se trong to chuc hoac khong co chia se ngoai"
+      ]
+    },
+    "personal_cloud_sync": {
+      "type": "noul",
+      "instructions": "Do the uploads go to a personal or unapproved cloud account instead of the organization's own storage?",
+      "criteria": [
+        "upload sang cloud ca nhan hoac dich vu khong duyet",
+        "upload hoac dong bo trong he thong duyet"
+      ]
+    },
+    "unusual_location": {
+      "type": "noul",
+      "instructions": "Do the source IP addresses, countries, device type or off-hours activity for this account differ from its normal working pattern?",
+      "criteria": [
+        "dau hieu dia diem la hoac thiet bi khong quan tri",
+        "dau hieu binh thuong hoac khong co du lieu so sanh"
+      ]
+    },
+    "credential_exposure": {
+      "type": "noul",
+      "instructions": "Do the audit records show a shared, exposed or newly created access key or token that should be rotated?",
+      "criteria": [
+        "co bang chung key/token bi lo, dung chung hoac moi tao",
+        "khong co bang chung hoac khong xac dinh duoc"
+      ]
+    },
+    "data_sensitivity": {
+      "type": "choice",
+      "instructions": "Which data class best matches the files touched in this window?",
+      "criteria": {
+        "thong_tin_dang_nhap": "credentials, keys, secrets",
+        "tai_chinh": "invoices, payments, transaction data",
+        "pii": "customer or employee personal data",
+        "nhan_su": "salary, performance, contract files",
+        "noi_bo": "internal documents without sensitive personal data"
+      }
+    },
+    "severity": {
+      "type": "score",
+      "instructions": "How soon should an analyst open this cloud profile? The bank hard rules already set the severity floor; this score only orders the review queue and never raises the severity.",
+      "criteria": [
+        "theo_doi: khong can mo them, theo doi dinh ky",
+        "xem_trong_ngay: mo sau cac muc P1/P2 theo hang doi uu tien",
+        "xem_ngay: mo song song voi hang doi uu tien"
+      ]
+    }
+  }
+}

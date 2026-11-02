@@ -1,6 +1,6 @@
 ---
 name: analyzing-cloud-storage-audit-logs
-description: "Analyze OneDrive, SharePoint, S3, and Azure cloud storage audit logs for mass download, external sharing, and credential exposure. Use when a cloud storage export or CloudTrail log set is provided. Remediation commands are proposals and require explicit user approval."
+description: "Analyze OneDrive, SharePoint, Azure Blob, AWS S3, and Google Drive audit logs for mass download, external sharing, personal cloud sync, and credential exposure. Use when a cloud storage audit export or CloudTrail log set is supplied. Not for endpoint forensics, mailbox audit, or DLP console triage."
 allowed-tools:
   - Read
   - Grep
@@ -8,14 +8,18 @@ allowed-tools:
   - Bash
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
 domain: cybersecurity
 subdomain: cloud-security
-mitre_attack: [T1048, T1074, T1567]
-prerequisites: Cloud storage admin access or CASB solution Microsoft 365, AWS, or GCP audit logs enabled SharePoint Online PowerShell or Graph API (for M365) CloudTrail (AWS), Cloud Audit Logs (GCP)
-expected_output: JSON format with cloud activity analysis and exfiltration indicators
+mitre_attack: [T1530, T1567.002, T1074, T1078]
+nist_csf: [DE.CM-1, DE.CM-9, DE.AE-3, RS.MI-1]
+prerequisites:
+  - Cloud storage audit export (M365 Unified Audit, CloudTrail, Azure Storage logs, Google Cloud Audit) in scope
+  - Identity of the account or user under investigation
+  - Approved cloud services and external sharing policy for the organization
+expected_output: JSON report with cloud activity findings, indicators, severity, and recommended actions
 tags:
-  - [cloud
+  - cloud
   - OneDrive
   - SharePoint
   - Azure
@@ -24,355 +28,133 @@ tags:
   - S3
   - exfiltration
   - DLP
-  - CASB]
+  - CASB
 metadata:
   owner: security-skills-team
   tier: 3
   source: local
 ---
 
-# Analyzing Cloud Storage Audit Logs (Tier 3)
+# Phan tich Cloud Storage Audit Logs (Tier 3)
 
 ## Overview
-This skill guides the analysis of cloud storage audit logs to detect data exfiltration via cloud storage services. It supports the **Data Leak Response** and **Abnormal User Behavior** playbooks by providing cloud-based evidence.
+
+Skill nay huong dan phan tich log kiem tra cloud storage (OneDrive, SharePoint, Azure Blob, AWS S3,
+Google Drive) de phat hien ro ri du lieu qua dich vu cloud: tai ve hang loat, chia se ngoai,
+dong bo sang cloud ca nhan va su dung khoa cong dung bi lo. Ket qua la bang chung cloud cho
+phong ro ri du lieu va dieu tra hanh vi bat thuong.
+
+Moi lenh thu hoi token, xoa share, vo hieu key hoac khoa tai khoan chi duoc **DE XUAT**,
+khong chay tu dong.
 
 ## When to Use
-Triggered by:
-- **playbook-data-leak-response**: To identify cloud storage as exfiltration route
-- **playbook-abnormal-user-behavior-response**: To check cloud usage patterns for insider threat
 
-## Supported Platforms
-| Platform | Log Source | Analysis Method |
-|----------|------------|-----------------|
-| **Microsoft OneDrive/SharePoint** | M365 Compliance Center, Purview | Graph API, PowerShell |
-| **Microsoft Azure Blob** | Azure Storage Analytics, Log Analytics | Azure Portal, PowerShell |
-| **AWS S3** | CloudTrail, S3 Access Logs | AWS Console, CLI |
-| **Google Drive** | Google Workspace Admin, Cloud Audit | Admin Console, API |
-| **Dropbox/Box** | CASB, Native Audit Logs | CASB Dashboard |
+Dung khi:
+- Phong ro ri du lieu can xac dinh cloud storage la duong ro ri.
+- Dieu tra hanh vi bat thuong can kiem tra thoi gian tai ve, chia se, dong bo cua nguoi dung.
+- Can phat hien upload / download hang loat, chia se "anyone with link", hoac su dung access key bi lo.
+- Nguoi dung cap file export log cloud (CSV/JSON) hoac CloudTrail.
 
----
+Khong dung cho:
+- Phan tich mailbox audit / message trace (xem `../analyzing-email-audit-logs/SKILL.md`).
+- Phan tich co canh bao DLP console (xem `../analyzing-dlp-alerts/SKILL.md`).
+- Phan tich file server / endpoint (xem `../analyzing-ueba-alerts-varonis/SKILL.md`).
 
-## 1. Log Collection
+## Prerequisites
 
-### 1.1 Microsoft 365 (OneDrive/SharePoint)
+- File export log cloud trong pham vi, co it nhat: thoi diem, nguoi dung hoac access key, hanh dong (download/upload/share/delete), ten tep hoac doi tuong, kich thuoc, dia chi IP.
+- Danh tinh tai khoan hoac nguoi dung can dieu tra.
+- Danh sach dich vu cloud duoc duyet va chinh sach chia se ngoai cua to chuc.
+- Khi can phoi hop voi su co khac: log identity (sign-in, token) va log endpoint neu co.
 
-#### PowerShell Collection
-```powershell
-# Connect to SharePoint Online
-Connect-SPOService -Url https://domain-admin.sharepoint.com
+**STOP rule:** Neu thieu mot dieu kien bat buoc o tren, dung tai buoc do, khong phan tich tiep.
+Tra `insufficient_evidence` va liet ke artefact con thieu theo Rules dong 1-2.
+Neu thieu danh sach dich vu duyet: ghi `NOT_AVAILABLE` cho truong nay, khong tu ket luan la duong
+ro ri duy nhat.
 
-# Get OneDrive usage and access
-Get-SPOUserOneDriveUsage -AccountEmail "huyhq@domain.com" |
-    Select-Object Owner, TotalFileCount, TotalStorageMB
+## Execution Steps
 
-# Get SharePoint audit logs (requires audit enabled)
-Search-UnifiedAuditLog -RecordType SharePointFileOperation `
-    -StartDate (Get-Date).AddDays(-30) -EndDate (Get-Date) |
-    Where-Object { $_.UserId -eq "huyhq@domain.com" } |
-    Export-CSV -Path "spo_audit.csv"
-```
+### Step 1 - Thu thap va chuan hoa log
+- Chot nen tang, pham vi thoi gian, tai khoan/nguoi dung va loai su kien trong export.
+- Chuan hoa timestamp: CloudTrail, Google Cloud Audit va M365 Unified Audit goc UTC -> cong 7 theo `../_shared/off-hours-and-baseline.md`.
+- Cac buoc thu thap va cau lenh theo nen tang: `references/collection-and-queries.md`.
 
-#### Graph API
-```powershell
-# Using Microsoft Graph
-Import-Module Microsoft.Graph.Reports
+### Step 2 - Tong hop hoat dong theo nguoi dung / tai khoan
+- Tong hop so tep truy cap, dung luong tai ve, dung luong upload, so lan chia se ngoai, so tep nhay cam.
+- Bieu mau tong hop: `references/analysis-playbook.md`.
 
-# Get file activities
-Get-MgReportSharePointActivityFileCounts -Period D30
-Get-MgReportSharePointActivityUserDetail -Period D30
-```
+### Step 3 - Phat hien tai ve hang loat (mass download)
+- So sanh so tep, dung luong tai ve va khoang thoi gian voi bang nguong tai `references/thresholds.md`.
+- File co phu lieu nhay cam (du phoi duong dan) deu la dau hieu can xem xet: `references/analysis-playbook.md`.
 
-### 1.2 AWS S3
+### Step 4 - Phat hien chia se ngoai
+- Phan biet loai link (chi to chuc / bat ky ai co link), quyen (doc / sua / toan quyen) va nguoi nhan ngoai.
+- Nguong so lan chia se lay tu `references/thresholds.md`.
+- Share "anyone with link" tren tep nhay cam la dau hieu rui ro cao, nhung van phai doi chieu bang chung.
 
-#### AWS CLI
-```bash
-# Get CloudTrail events for S3
-aws cloudtrail lookup-events \
-    --lookup-attributes AttributeKey=AccessKeyId,AttributeValue=AKIAIOSFODNN7EXAMPLE \
-    --start-time 2024-01-01T00:00:00Z \
-    --end-time 2024-01-15T23:59:59Z
+### Step 5 - Phat hien dong bo / upload sang cloud khac
+- Upload sang OneDrive ca nhan, Google Drive ca nhan, Dropbox, Box khong duyet.
+- Doi chieu voi danh sach dich vu duyet (dang ngoai) va voi quy tac T1567.002 trong `../_shared/mitre-nist-mapping.md`.
 
-# Get S3 access logs
-aws s3api get-object --bucket my-bucket --key file.txt file.txt
+### Step 6 - Phat hien truy cap tu dia diem la
+- IP/ISP la, quoc gia khac, thiet bi khong quan tri, truy cap ngoai gio.
+- Khung gio lam viec va quy tac ngoai gio lay tu `../_shared/off-hours-and-baseline.md`.
 
-# List bucket objects with sizes
-aws s3api list-objects --bucket my-bucket --query 'Contents[].{Key: Key, Size: Size}'
-```
+### Step 7 - Kiem tra credential exposure
+- Phat hien dang nhap bang access key/token, dung chung key nhieu nguon, key bi rot trong log.
+- Khong tu thu hoi token hoac xoa key: chi de xuat, theo Rules dong 6.
 
-### 1.3 Azure Blob
+### Step 8 - Phan cap, xep hang va de xuat
+- Muc P1-P4 lay tu `../_shared/severity-and-escalation.md`; khong tao bang phan cap rieng.
+- Xep hang uu tien xu ly (khong phai muc phan cap) theo `schemas/jev_contract.json`.
+- Moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`; khong ghi so gio/ngay cuc the trong body skill.
+- Hanh dong de xuat: `references/analysis-playbook.md`.
 
-#### Azure CLI / PowerShell
-```powershell
-# Connect to Azure
-Connect-AzAccount
+## Expected Output
 
-# Get storage account keys
-Get-AzStorageAccountKey -ResourceGroupName "MyResourceGroup" -Name "mystorageaccount"
-
-# Enable storage analytics (if not enabled)
-Set-AzStorageServiceLoggingProperty -ServiceType Blob `
-    -LoggingOperations All `
-    -RetentionDays 30
-
-# Query blob logs in Log Analytics
-Get-AzOperationalInsightsQueryResult -WorkspaceId $workspaceId `
-    -Query "StorageBlobLogs | where AccountName == 'mystorageaccount' | where OperationName == 'PutBlob'"
-```
-
----
-
-## 2. Exfiltration Detection Patterns
-
-### 2.1 Large Download Detection
-*Detect bulk downloads from cloud storage.*
-
-| Pattern | Threshold | Risk |
-|---------|-----------|------|
-| **File count** | > 100 files in 1 hour | High |
-| **Data volume** | > 1 GB download in 24h | Critical |
-| **Sensitive types** | Download of .pst, .bak, .csv | High |
-| **Shared links** | > 10 external sharing events | High |
-
-### 2.2 External Sharing Detection
-*Detect unauthorized external sharing.*
-
-| Pattern | Normal | Suspicious |
-|---------|--------|------------|
-| **Sharing events** | Rare | Daily > 5 |
-| **External domains** | None | Multiple personal |
-| **Link type** | Organization-only | Anyone with link |
-| **Permission level** | Read only | Edit/Full control |
-
-```powershell
-# Check external sharing in SharePoint
-Get-SPOSite -Limit All | Where-Object { $_.SharingCapability -ne "Disabled" } |
-    Select-Object URL, SharingCapability, StorageUsageTB
-```
-
-### 2.3 Access from Unusual Locations
-*Detect cloud access from unusual places.*
-
-| Indicator | Normal | Suspicious |
-|-----------|--------|------------|
-| **IP range** | Office/VPN | Personal ISP, VPN |
-| **Country** | Vietnam | New country |
-| **Device** | Managed | Personal device |
-| **Time** | Business hours | After hours |
-
----
-
-## 3. Analysis Procedures
-
-### Step 3.1: User Activity Summary
-*Get overview of user's cloud activity.*
+1. **Bao cao** (markdown): tom tat, bang chi tiet hoat dong cloud, muc P1-P4 theo `../_shared/severity-and-escalation.md`, danh sach IOC, hanh dong de xuat.
+2. **JSON** (fenced, dung schema trong `references/` neu co):
 
 ```json
 {
-  "user": "huyhq@domain.com",
-  "analysis_period": "2024-01-08 to 2024-01-15",
-  "onedrive_summary": {
-    "total_files_accessed": 3420,
-    "total_download_mb": 4500,
-    "total_upload_mb": 150,
-    "external_shares": 23,
-    "sharing_breakdown": {
-      "internal": 15,
-      "external": 8
-    }
-  },
-  "sharepoint_summary": {
-    "sites_accessed": 12,
-    "files_accessed": 890,
-    "files_modified": 45,
-    "sensitive_files_accessed": ["customer_list.xlsx", "salary_data.csv"]
-  }
-}
-```
-
-### Step 3.2: Pattern Analysis
-*Identify exfiltration patterns.*
-
-| Pattern | Detection Method | Exfiltration Type |
-|---------|-----------------|------------------|
-| **Zip and download** | Bulk download after file creation | Scheduled exfil |
-| **Personal cloud sync** | Uploads to personal storage | Auto-exfil |
-| **Sharing link abuse** | Mass sharing to external | Manual exfil |
-| **API extraction** | Programmatic bulk access | Scripted exfil |
-
-### Step 3.3: Data Classification Check
-*Identify sensitive data accessed.*
-
-| Data Type | File Patterns | Risk |
-|-----------|---------------|------|
-| **PII** | *customer*, *employee*, *personal* | High |
-| **Financial** | *invoice*, *payment*, *transaction* | Critical |
-| **Credentials** | *password*, *credential*, *secret* | Critical |
-| **HR** | *salary*, *performance*, *contract* | High |
-
----
-
-## 4. IOCs Extraction
-
-```json
-{
-  "analysis_id": "CLOUD-AUDIT-20240115-001",
-  "user": "huyhq@domain.com",
-  "time_range": "2024-01-08 to 2024-01-15",
-  "findings": {
-    "upload_activities": [
-      {
-        "timestamp": "2024-01-15T16:30:00Z",
-        "destination": "personal OneDrive (personal@gmail.com)",
-        "files": ["customer_database_10k.xlsx", "employee_records.csv"],
-        "size_mb": 850,
-        "method": "Sync to personal account",
-        "risk": "Critical"
-      }
-    ],
-    "download_activities": [
-      {
-        "timestamp": "2024-01-15T14:00:00Z",
-        "files": ["Q4_financial_report.xlsx", "customer_pricing.xlsx"],
-        "size_mb": 250,
-        "risk": "High"
-      }
-    ],
-    "external_shares": [
-      {
-        "timestamp": "2024-01-12T10:00:00Z",
-        "file": "Strategic_Plan_2024.pptx",
-        "link_type": "Anyone with link",
-        "recipient": "external@gmail.com",
-        "risk": "High"
-      }
-    ]
-  },
-  "iocs": {
-    "personal_accounts": ["personal@gmail.com", "backup_drive@outlook.com"],
-    "files_exfiltrated": ["customer_database_10k.xlsx", "employee_records.csv"],
-    "total_size_mb": 850
-  },
-  "risk_level": "Critical"
-}
-```
-
----
-
-## 5. Remediation Actions
-
-### 5.1 Microsoft 365
-| Action | Command | Priority |
-|--------|---------|----------|
-| Revoke user sessions | `Revoke-AzureADUserAllRefreshToken` | P1 |
-| Disable OneDrive sync | Set-SPOTenant -DisablePersonalFeatures | P1 |
-| Remove external shares | `Remove-SPOUser -Site https://domain.sharepoint.com` | P1 |
-| Block personal cloud | CASB policy: Block non-approved cloud storage | P1 |
-
-```powershell
-# Remove all external sharing links for user
-Get-SPOSite -Limit All | ForEach-Object {
-    Get-SPOUser -Site $_.Url -Limit All |
-        Where-Object { $_.Userexternalidentity -and $_.LoginName -like "*huyhq*" } |
-        Remove-SPOUser -Site $_.Url -LoginName $_.LoginName -Confirm:$false
-}
-
-# Disable OneDrive for user (if licensed)
-Set-SPOSite -Identity "https://domain-my.sharepoint.com/personal/huyhq_domain_com" `
-    -StorageQuota 0 -LockState NoAccess
-```
-
-### 5.2 AWS S3
-```bash
-# Remove bucket policy allowing public access
-aws s3api delete-bucket-policy --bucket my-bucket
-
-# Enable S3 Block Public Access
-aws s3control put-public-access-block \
-    --account-id 123456789012 \
-    --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true"
-
-# Identify and revoke access keys
-aws iam delete-access-key --access-key-id AKIAIOSFODNN7EXAMPLE --user-name username
-```
-
-### 5.3 Azure Blob
-```powershell
-# Revoke storage account keys
-New-AzStorageAccountKey -ResourceGroupName "MyResourceGroup" `
-    -Name "mystorageaccount" -KeyName key1 -Force
-
-# Disable anonymous access
-Set-AzStorageAccount -ResourceGroupName "MyResourceGroup" `
-    -Name "mystorageaccount" -AllowBlobPublicAccess $false
-
-# Regenerate SAS tokens
-New-AzStorageAccountSASToken -Service Blob -ResourceType Container,Object `
-    -Permission rwdl -ExpiryTime (Get-Date).AddDays(-1)
-```
-
----
-
-## 6. Escalation Criteria
-
-*Escalate to playbook-data-leak-response if:*
-
-| Criteria | Threshold |
-|----------|-----------|
-| **Data Type** | PII, Financial, Credentials |
-| **Volume** | > 100 records or > 500 MB |
-| **Destination** | Personal cloud storage confirmed |
-| **Intent** | Evidence of willful exfiltration |
-
----
-
-## 7. Expected Output
-
-```json
-{
-  "analysis_id": "CLOUD-ANALYSIS-20240115-001",
-  "user_analyzed": "huyhq@domain.com",
-  "time_range": {
-    "start": "2024-01-08T00:00:00Z",
-    "end": "2024-01-15T23:59:59Z"
+  "skill": "analyzing-cloud-storage-audit-logs",
+  "status": "ok",
+  "scope": {
+    "source": "M365 Unified Audit (SharePointFileOperation)",
+    "time_range": "NOT_AVAILABLE",
+    "users": []
   },
   "summary": {
-    "files_accessed": 3420,
-    "files_uploaded": 25,
-    "files_downloaded": 890,
-    "external_shares": 23,
-    "sensitive_access": 5,
-    "total_size_mb": 4500
+    "files_accessed": 0,
+    "files_downloaded": 0,
+    "files_uploaded": 0,
+    "external_shares": 0,
+    "total_size_mb": 0
   },
-  "anomalies": [
-    {
-      "type": "PersonalCloudUpload",
-      "timestamp": "2024-01-15T16:30:00Z",
-      "destination": "personal@gmail.com OneDrive",
-      "files": ["customer_database_10k.xlsx", "employee_records.csv"],
-      "size_mb": 850,
-      "risk": "Critical"
-    }
-  ],
-  "iocs": {
-    "personal_accounts": ["personal@gmail.com"],
-    "files": ["customer_database_10k.xlsx", "employee_records.csv"],
-    "domains": ["gmail.com"]
-  },
-  "actions_taken": ["ExternalSharesRemoved", "OneDriveAccessRevoked"],
-  "escalation": {
-    "escalate": true,
-    "playbook": "playbook-data-leak-response",
-    "reason": "PII exfiltration via personal cloud storage"
-  }
+  "findings": [],
+  "indicators": [],
+  "severity": "P4",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": []
 }
 ```
 
----
+Vi du mau cua skill nay: `references/report-example.md`.
 
-## Related Playbooks
-- [`playbook-data-leak-response`](../../drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
-- [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Insider threat investigation
-- [`analyzing-dlp-alerts`](../analyzing-dlp-alerts/SKILL.md) - DLP correlation
+## References
+
+- Bang nguong phat hien: `references/thresholds.md`
+- Quy trinh phan tich chi tiet, mau tong hop va hanh dong de xuat: `references/analysis-playbook.md`
+- Buoc thu thap du lieu va cau lenh theo nen tang: `references/collection-and-queries.md`
+- Vi du bao cao day du: `references/report-example.md`
+- Hop dong xep hang Jev (chi xep hang, khong nang muc): `schemas/jev_contract.json`
+- Muc thoi gian phap ly: `../_shared/compliance-vietnam.md`
+- Bang phan cap P1-P4 va ma leo thang: `../_shared/severity-and-escalation.md`
+- Gio lam viec, timezone, baseline: `../_shared/off-hours-and-baseline.md`
+- Mapping MITRE ATT&CK / NIST CSF hop le: `../_shared/mitre-nist-mapping.md`
+- Quy tac bat buoc cua tat ca skill: `../_shared/rules-block.md`
+- Lien quan: `../playbook-abnormal-user-behavior-response/SKILL.md`, `../analyzing-dlp-alerts/SKILL.md`, `../analyzing-email-audit-logs/SKILL.md`
 
 ## Rules (bat buoc)
 

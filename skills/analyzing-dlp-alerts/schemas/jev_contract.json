@@ -1,0 +1,101 @@
+{
+  "contract_version": "1",
+  "skill": "analyzing-dlp-alerts",
+  "calibrated": false,
+  "threshold_note": "calibrated=false -> Jev CHI XEP HANG (thu tu uu tien xu ly), KHONG nang muc do phan cap. Muc P1-P4 chi lay tu ../_shared/severity-and-escalation.md va bang nguong cua skill tai references/thresholds.md. Diem so cua Jev khong duoc dung de quyet dinh muc P1-P4.",
+  "scope": "Xep hang canh bao DLP de sap xep thu tu xu ly. Khong phat hien moi su co, khong thay the phan cap P1-P4, khong tu chay hanh dong khoa/xoa.",
+  "merge": "max(rule_level, jev_level)",
+  "thresholds": {
+    "dlp_critical": null,
+    "dlp_high": null,
+    "score_min": null,
+    "noul_min": null,
+    "_reason": "Chua co bang hieu chinh tren bo du lieu canh bao DLP cua ngan hang (khong co mau co nhan ket luan). De null de tranh tu dat nguong. Khi co bang do, phai ghi mau so, so mau va ket qua vao file nay truoc khi dung."
+  },
+  "display": {
+    "dlp_true_positive": "Canh bao DLP co that",
+    "dlp_policy_error": "Sai rule DLP",
+    "data_sensitive": "Du lieu nhay cam",
+    "route_external": "Dien ra ngoai",
+    "route_internal": "Dien trong to chuc",
+    "volume_anomaly": "Luong du lieu bat thuong",
+    "repeat_pattern": "Lap lai nhieu lan",
+    "theo_doi": "Theo doi",
+    "xem_trong_ngay": "Xem trong ngay",
+    "xem_ngay": "Xem ngay",
+    "khong_can": "Khong can dieu tra them"
+  },
+  "profile_fields": [
+    "user",
+    "alert_id",
+    "alert_type",
+    "policy_violated",
+    "data_classification",
+    "action_taken",
+    "record_count",
+    "file_size_mb",
+    "recipient_count",
+    "external_recipients",
+    "repeat_count",
+    "route",
+    "off_hours",
+    "multi_source_events"
+  ],
+  "questions": {
+    "dlp_true_positive": {
+      "type": "noul",
+      "instructions": "Do the alert fields (user, policy, action taken, files, recipients) show a real policy violation by a person, rather than a rule that is misconfigured or a test activity?",
+      "criteria": [
+        "co bang chung nguoi dung + policy + file/tin nhan + hanh dong DLP",
+        "khong co bang chung nguoi dung hoac policy khong ton tai"
+      ]
+    },
+    "data_sensitivity": {
+      "type": "choice",
+      "instructions": "Which data classification best matches the content involved in this alert?",
+      "criteria": {
+        "thong_tin_dang_nhap": "credentials, API keys, tokens",
+        "tai_chinh": "account numbers, transactions, payment data",
+        "suc_khoe": "medical or insurance records",
+        "pii": "names, ID numbers, date of birth, addresses",
+        "noi_bo": "internal memos, HR or routine documents"
+      }
+    },
+    "route_external": {
+      "type": "choice",
+      "instructions": "Where did the data go according to the alert record?",
+      "criteria": {
+        "email_ngoai": "sent to an external or personal mailbox",
+        "cloud_ca_nhan": "uploaded to a personal or unapproved cloud service",
+        "thiet_bi_luu_tru": "copied to removable media",
+        "in_an": "printed to paper",
+        "trong_to_chuc": "stayed inside approved organization systems"
+      }
+    },
+    "volume_anomaly": {
+      "type": "noul",
+      "instructions": "Do the record counts, file sizes and recipient counts in this alert stand out compared with the thresholds for this skill?",
+      "criteria": [
+        "so luong vuot nguong phat hien trong references/thresholds.md",
+        "so luong nam duoi nguong hoac khong xac dinh duoc"
+      ]
+    },
+    "repeat_pattern": {
+      "type": "noul",
+      "instructions": "Does this alert repeat a pattern already seen for the same user, or is it a single isolated event?",
+      "criteria": [
+        "lap lai nhieu lan cho cung nguoi dung",
+        "su kien don le, khong co mau trung hop"
+      ]
+    },
+    "severity": {
+      "type": "score",
+      "instructions": "How soon should an analyst open this alert? The bank hard rules already set the severity floor; this score only orders the review queue and never raises the severity.",
+      "criteria": [
+        "theo_doi: khong can mo them, theo doi dinh ky",
+        "xem_trong_ngay: mo sau cac muc P1/P2 theo hang doi uu tien",
+        "xem_ngay: mo song song voi hang doi uu tien"
+      ]
+    }
+  }
+}
