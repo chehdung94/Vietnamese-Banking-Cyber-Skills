@@ -1,13 +1,28 @@
 ---
 name: playbook-pre-departure-insider-review
-description: Tier 2 Playbook for pre-departure compliance review of departing employees with access to sensitive data. Includes multi-channel analysis, risk scoring, collusion detection, and DLP effectiveness assessment.
+description: "Review a departing employee access, mail, and file activity before the account is disabled. Use when HR provides a departure date and the team must assess data-exfiltration risk before cutoff. Reuses the shared scoring matrix from playbook-abnormal-user-behavior-response."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: insider-threat
-tags: [playbook, tier-2, pre-departure, insider-risk, offboarding, compliance, collusion]
-version: "1.0"
-author: cybersecurity-skills-mode
-license: Apache-2.0
-mitre_attack: [T1041, T1074, T1114, T1530]
+mitre_attack: [T1048, T1074, T1114, T1530]
+tags:
+  - playbook
+  - tier-2
+  - pre-departure
+  - insider-risk
+  - offboarding
+  - compliance
+  - collusion
+metadata:
+  owner: security-skills-team
+  tier: 2
+  source: local
 ---
 
 # Playbook: Pre-Departure Insider Risk Review (Tier 2) 🆕
@@ -158,3 +173,13 @@ Evaluate each protection layer:
 - [`playbook-master-incident-triage`](../playbook-master-incident-triage/SKILL.md) – Tier 1 classification
 - [`analyzing-email-audit-logs`](../analyzing-email-audit-logs/SKILL.md) – Tier 3 email analysis
 - [`analyzing-dlp-alerts`](../analyzing-dlp-alerts/SKILL.md) – Tier 3 DLP analysis
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.

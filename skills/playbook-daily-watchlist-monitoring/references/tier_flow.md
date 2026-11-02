@@ -212,9 +212,9 @@ OUTPUT: Escalation report to CISO
         │
         ▼
 08:10 - Tier 2: Daily Watchlist Monitoring
-        ├── Chạy Process_AD_Log.py
-        ├── Chạy Process_Email_Log.py
-        ├── Chạy Process_Fileserver_Log.py
+        ├── Chạy analyze_watchlist_playbook.py (AD + email + fileserver)
+        ├── Chạy score_watchlist_jev.py (mức luật là sàn, Jev chỉ nâng)
+        ├── Xem Logs/Tong_Hop_{batch}.md và báo cáo 3 phần
         └── Merge outputs
         │
         ▼
@@ -242,7 +242,7 @@ OUTPUT: Escalation report to CISO
 |-------------|------------|----------------|
 | Log retention | Luật An ninh mạng | Varonis logs retained 90 days |
 | PII protection | NĐ 13/2023, NĐ 356/2025 | Sensitive file keyword monitoring |
-| Breach notification | NĐ 356/2025 (36 hours) | Tier 2 escalation within 36 hours |
+| Breach notification | NĐ 356/2025 (72 hours) | Tier 2 escalation within 72 hours |
 | Financial data protection | NHNN Circulars | Fileserver monitoring for financial folders |
 | Access monitoring | NHNN Circulars | AD authentication monitoring |
 

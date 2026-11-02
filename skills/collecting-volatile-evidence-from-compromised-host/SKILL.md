@@ -1,12 +1,26 @@
 ---
 name: collecting-volatile-evidence-from-compromised-host
-description: Collect volatile forensic evidence from a compromised system following order of volatility, preserving memory, network connections, processes, and system state before they are lost.
+description: "Collect volatile evidence from a live compromised Windows host in volatility order per RFC 3227. Use at the start of live-response triage, before the host is powered off or reimaged."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: incident-response
-tags: [volatile-evidence, live-forensics, memory-acquisition, DFIR, incident-response]
-version: "1.0"
-author: mahipal
-license: Apache-2.0
+tags:
+  - [volatile-evidence
+  - live-forensics
+  - memory-acquisition
+  - DFIR
+  - incident-response]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: local
 ---
 
 # Collecting Volatile Evidence from Compromised Host
@@ -49,7 +63,7 @@ Volatile evidence exists only in RAM and is lost upon system shutdown. This skil
 
 **Create evidence directory:**
 ```bash
-EVIDENCE_DIR="/mnt/forensics/$(hostname)_$(date +%Y%m%d_%H%M%S)"
+EVIDENCE_DIR="C:\Forensics\$(hostname)_$(Get-Date -Format yyyyMMdd_HHmmss)"
 mkdir -p "$EVIDENCE_DIR"
 cd "$EVIDENCE_DIR"
 ```
@@ -222,6 +236,16 @@ EOF
 | Velociraptor | Remote forensic collection |
 | CyLR | Cross-platform live response |
 | Sysinternals | Process/handle analysis |
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
 
 ## References
 

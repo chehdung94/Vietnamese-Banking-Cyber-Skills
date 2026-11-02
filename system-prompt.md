@@ -166,14 +166,14 @@ When producing reports or findings:
 ## Vietnamese Banking Compliance Note
 
 When working with Vietnamese banking clients, always consider:
-- **Luật Bảo vệ Dữ liệu Cá nhân 2024** (Luật số 32/2024/QH15) – Có hiệu lực 01/07/2025
-- **Nghị định 356/2025/NĐ-CP** – Hướng dẫn Luật BVTTDL (thay thế NĐ 13/2023, có hiệu lực 01/07/2025)
+- **Luật Bảo vệ Dữ liệu Cá nhân 2024** (Luật số 91/2025/QH15) – Có hiệu lực 01/01/2026
+- **Nghị định 356/2025/NĐ-CP** – Hướng dẫn Luật BVTTDL (thay thế NĐ 13/2023, có hiệu lực 01/01/2026)
 - **Luật An ninh mạng** (2018) – Network security requirements
 - **NHNN Circulars** – State Bank IT security requirements
 - **GDPR alignment** – If handling EU customer data
 
 ### Key Changes: NĐ 356/2025/NĐ-CP
-- Thời hạn thông báo vi phạm: 36 giờ (trước đây 24h)
+- Thời hạn thông báo vi phạm: 72 giờ (trước đây 24h)
 - Xử phạt hành chính: Tối đa 200 triệu VNĐ
 - Yêu cầu DPIA (Data Protection Impact Assessment)
 - Quy trình phê duyệt chuyển dữ liệu ra nước ngoài bổ sung

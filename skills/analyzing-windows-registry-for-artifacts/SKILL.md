@@ -1,12 +1,27 @@
 ---
 name: analyzing-windows-registry-for-artifacts
-description: Extract and analyze Windows Registry hives to uncover user activity, installed software, autostart entries, and evidence of system compromise.
+description: "Extract and triage Windows registry artifacts such as Run keys, services, UserAssist, and persistence from forensic hive images. Use when SOFTWARE.hiv or ntuser.hiv images, or an exported registry, are provided."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: digital-forensics
-tags: [windows-registry, registry-hives, forensics, autostart, user-activity, DFIR]
-version: "1.0"
-author: mahipal
-license: Apache-2.0
+tags:
+  - [windows-registry
+  - registry-hives
+  - forensics
+  - autostart
+  - user-activity
+  - DFIR]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: local
 ---
 
 # Analyzing Windows Registry for Artifacts
@@ -111,8 +126,18 @@ python user_activity.py --hive NTUSER.DAT.hiv
 |-----------------|------------------|
 | HKCU\Run | T1547.001 (Boot/Logon Autostart Execution) |
 | HKLM\Services | T1543.003 (Create/Modify System Process) |
-| HKCU\Environment | T1003.004 (LSASRV) |
-| UserAssist | T1053.005 (Scheduled Task) |
+| HKCU\Environment | T1112 (Modify Registry) |
+| UserAssist | T1112 (Modify Registry) |
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
 
 ## References
 

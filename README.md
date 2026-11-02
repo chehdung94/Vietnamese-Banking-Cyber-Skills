@@ -1,7 +1,7 @@
 # 🛡️ Vietnamese Banking Cyber Skills
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Skills-10-success?style=for-the-badge" alt="Skills Count" />
+  <img src="https://img.shields.io/badge/Skills-20-success?style=for-the-badge" alt="Skills Count" />
   <img src="https://img.shields.io/badge/Architecture-3--Tier-blue?style=for-the-badge" alt="Architecture" />
   <img src="https://img.shields.io/badge/MITRE%20ATT%26CK-Mapped-orange?style=for-the-badge" alt="MITRE ATT&CK" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=for-the-badge" alt="License" />
@@ -41,7 +41,7 @@
 |----------|-------|
 | **Chuẩn hóa IR** | Cung cấp quy trình IR đồng nhất cho đội ngũ an ninh |
 | **Tự động hóa** | Hỗ trợ AI Agent thực hiện triage, analysis, và containment |
-| **Tuân thủ pháp luật** | Tích hợp Nghị định 356/2025/NĐ-CP, Luật BVTTDL 2024 và quy định NHNN |
+| **Tuân thủ pháp luật** | Tích hợp Nghị định 356/2025/NĐ-CP, Luật Bảo vệ dữ liệu cá nhân 91/2025/QH15 và quy định NHNN |
 | **MITRE ATT&CK** | Ánh xạ kỹ năng với framework ATT&CK phổ biến |
 
 ---
@@ -105,6 +105,7 @@ Vietnamese-Banking-Cyber-Skills/
 ├── system-prompt.md               # AI Agent system prompt
 ├── skills/
 │   ├── ARCHITECTURE.md            # Architecture documentation
+├── _shared/                   # Tài liệu dùng chung (KHÔNG phải skill)
 │   ├── README.md                  # Skills index
 │   ├── _drafts/                  # ⚠️ NOT pushed to GitHub
 │   │   └── README.md              # Draft skills documentation
@@ -153,7 +154,7 @@ Vietnamese-Banking-Cyber-Skills/
 |-------|-------------|--------------|
 | [`playbook-phishing-response`](skills/playbook-phishing-response/SKILL.md) | Xử lý email lừa đảo, credential harvesting | T1566 |
 | [`playbook-abnormal-user-behavior-response`](skills/playbook-abnormal-user-behavior-response/SKILL.md) | Phản ứng hành vi bất thường UEBA, insider threat | T1074, T1114 |
-| *(Xem draft)* | Data Leak Response | T1041, T1074 |
+| *(Xem draft)* | Data Leak Response | T1048, T1074 |
 | *(Đang phát triển)* | Malware/Ransomware Response | T1486 |
 | *(Đang phát triển)* | Account Takeover Response | T1078 |
 
@@ -167,12 +168,43 @@ Vietnamese-Banking-Cyber-Skills/
 | [`analyzing-windows-registry-for-artifacts`](skills/analyzing-windows-registry-for-artifacts/SKILL.md) | Trích xuất artifacts từ Windows Registry | T1012 |
 | [`collecting-volatile-evidence-from-compromised-host`](skills/collecting-volatile-evidence-from-compromised-host/SKILL.md) | Thu thập volatile evidence theo RFC 3227 | T1054 |
 | [`performing-windows-artifact-analysis-with-eric-zimmerman-tools`](skills/performing-windows-artifact-analysis-with-eric-zimmerman-tools/SKILL.md) | Windows forensics với KAPE, MFTECmd | T1005 |
-| [`analyzing-dlp-alerts`](skills/analyzing-dlp-alerts/SKILL.md) | Phân tích DLP alerts (Purview, Varonis) | T1041, T1074 |
+| [`analyzing-dlp-alerts`](skills/analyzing-dlp-alerts/SKILL.md) | Phân tích DLP alerts (Purview, Varonis) | T1048, T1074 |
 | [`analyzing-azure-ad-signin-logs`](skills/analyzing-azure-ad-signin-logs/SKILL.md) | Phân tích Azure AD sign-in logs | T1078, T1110 |
 | [`analyzing-email-audit-logs`](skills/analyzing-email-audit-logs/SKILL.md) | Phân tích email audit logs (Exchange, M365) | T1114, T1566 |
-| [`analyzing-cloud-storage-audit-logs`](skills/analyzing-cloud-storage-audit-logs/SKILL.md) | Phân tích cloud storage logs (OneDrive, S3) | T1041, T1074 |
+| [`analyzing-cloud-storage-audit-logs`](skills/analyzing-cloud-storage-audit-logs/SKILL.md) | Phân tích cloud storage logs (OneDrive, S3) | T1048, T1074 |
 
 ---
+
+## 🤖 Cài đặt cho Factory Droid
+
+Bộ skill đã chuẩn theo chuẩn Droid: mỗi skill có `SKILL.md` (frontmatter `compatibility: droid`),
+`references/` cho SOP dài, `schemas/` cho JSON Schema, `jev_contract.json` cho lớp chấm điểm.
+
+```powershell
+# Liên kết thư mục skill vào kho cá nhân của Droid
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.factory\skills\vn-bank-cyber" `
+  -Target "D:\AI\Vietnamese-Banking-Cyber-Skills\skills"
+
+# Mở phiên Droid mới để nạp skill
+```
+
+Sau khi cài:
+- `/skills` → tab **Effective** để kiểm tra skill đã được nhận diện.
+- Gọi trực tiếp: `/playbook-master-incident-triage`
+- Hoặc để Droid tự chọn: mô tả sự cố bằng lời, Droid khớp theo `description`.
+
+`_drafts/` không được cài (đã gitignore). `_shared/` là tài liệu dùng chung, không phải skill —
+các skill tham chiếu bằng đường dẫn tương đối `../_shared/`.
+
+### 📚 Tài liệu dùng chung (`skills/_shared/`)
+
+| File | Nội dung | Thay cho |
+|---|---|---|
+| `compliance-vietnam.md` | Văn bản pháp lý VN, mốc thời gian bắt buộc, mẫu biểu | Các bảng luật rải rác trong skill |
+| `severity-and-escalation.md` | Thang P1-P4 và ma leo thang | 3 bảng P1-P4 mâu thuẫn |
+| `off-hours-and-baseline.md` | Khung giờ làm việc, timezone, cách tính baseline μ/σ | 6 định nghĩa giờ ngoài giờ mâu thuẫn |
+| `mitre-nist-mapping.md` | Mapping MITRE ATT&CK + NIST CSF 2.0 đã sửa | Mapping sai trong frontmatter |
+| `rules-block.md` | Khối `## Rules` bắt buộc | Chưa có guardrail chống bịa |
 
 ## 🚀 Quick Start
 
@@ -290,18 +322,18 @@ vol -f mem.dmp windows.malfind.Malfind
 
 ### Quick Reference: Nghị định 356/2025/NĐ-CP
 
-> **Có hiệu lực: 01/07/2025** • Thay thế Nghị định 13/2023/NĐ-CP
+> **Có hiệu lực: 01/01/2026** • Thay thế Nghị định 13/2023/NĐ-CP
 
 | Thời hạn | Hành động |
 |----------|-----------|
 | **T+0** | Phát hiện sự cố |
-| **T+36 giờ** | Thông báo Cơ quan chức năng & Người dùng bị ảnh hưởng |
+| **T+72 giờ** | Thông báo Cơ quan chức năng & Người dùng bị ảnh hưởng |
 | **T+72 giờ** | Đánh giá tác động (DPIA) |
 | **T+30 ngày** | Báo cáo điều tra & Kế hoạch khắc phục |
 
 ### Điểm mới chính
 
-- ⏱️ **Thời hạn thông báo:** 24h → **36 giờ**
+- ⏱️ **Thời hạn thông báo:** 24h → **72 giờ**
 - 💰 **Xử phạt vi phạm:** 100 triệu → **200 triệu VNĐ**
 - 📋 **DPIA bắt buộc** cho xử lý dữ liệu nhạy cảm
 - 🌐 **Chuyển dữ liệu ra nước ngoài:** Cần phê duyệt bổ sung (Điều 54)
@@ -310,8 +342,8 @@ vol -f mem.dmp windows.malfind.Malfind
 
 | Văn bản | Hiệu lực |
 |---------|----------|
-| **Luật BVTTDL 2024** (32/2024/QH15) | Luật gốc |
-| **Nghị định 356/2025/NĐ-CP** | Hướng dẫn chi tiết (01/07/2025) |
+| **Luật Bảo vệ dữ liệu cá nhân 91/2025/QH15** (91/2025/QH15) | Luật gốc |
+| **Nghị định 356/2025/NĐ-CP** | Hướng dẫn chi tiết (01/01/2026) |
 | **Luật An ninh mạng 2018** | ANM compliance |
 | **Thông tư 13/2020/TT-NHNN** | ANTT cho thanh toán điện tử |
 
@@ -321,7 +353,7 @@ vol -f mem.dmp windows.malfind.Malfind
 ## Compliance Checklist
 
 ### Nghị định 356/2025/NĐ-CP
-- [ ] Thông báo vi phạm trong 36 giờ
+- [ ] Thông báo vi phạm trong 72 giờ
 - [ ] DPIA được thực hiện
 - [ ] DPO được chỉ định
 - [ ] Hồ sơ xử lý dữ liệu cá nhân cập nhật

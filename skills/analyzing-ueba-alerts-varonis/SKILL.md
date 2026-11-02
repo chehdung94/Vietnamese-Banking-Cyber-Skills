@@ -1,14 +1,29 @@
 ---
 name: analyzing-ueba-alerts-varonis
-description: Analyze and triage User Entity Behavior Analytics (UEBA) alerts from Varonis Data Advantage platform, identifying insider threats and anomalous user behavior in banking environments
+description: "Score Varonis UEBA alerts into a comparable risk level and summarize the supporting evidence. Use when UEBA alerts are exported for review. Behavioral and historical factors come from a calibrated contract, not free-form judgement."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: threat-detection-ueba
-tags: [varonis, ueba, insider-threat, user-behavior, anomaly-detection, banking]
-version: "1.0"
-author: cybersecurity-skills-mode
-license: Apache-2.0
-mitre_attack: [T1074, T1114, T1539, T1484]
-nist_csf: [DE.CM-3, DE.AE-3, PR.AC-4]
+mitre_attack: [T1074, T1114, T1110, T1222]
+nist_csf: [DE.CM-3, DE.AE-3, PR.AA-05]
+tags:
+  - [varonis
+  - ueba
+  - insider-threat
+  - user-behavior
+  - anomaly-detection
+  - banking]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: local
 ---
 
 # Analyzing UEBA Alerts from Varonis
@@ -59,8 +74,8 @@ Group alerts into MITRE ATT&CK tactics:
 |------------|--------------|----------|
 | Abnormal file access | T1074 (Staging) | High |
 | Bulk email download | T1114 (Email Collection) | High |
-| Failed login attempts | T1539 (Steal Credentials) | Medium |
-| Permission changes | T1484 (Defense Evasion) | Critical |
+| Failed login attempts | T1110 (Brute Force) | Medium |
+| Permission changes | T1222 (File and Directory Permissions Modification) | Critical |
 | Data exfiltration attempt | T1048 (Exfiltration) | Critical |
 | Malware indicators | T1566 (Phishing) | Critical |
 
@@ -182,13 +197,23 @@ When analyzing alerts in Vietnamese banking environment:
 
 - **Data Classification**: Customer PII, Financial records, Account data
 - **Regulatory Reference**: 
-  - Nghị định 13/2023/NĐ-CP (PDP) for personal data
+  - Nghị định 13/2023/NĐ-CP (đã hết hiệu lực 01/01/2026 - dùng Nghị định 356/2025/NĐ-CP, xem ../_shared/compliance-vietnam.md) (PDP) for personal data
   - NHNN Circular on IT Security for financial data
 - **Common Alert Scenarios**:
   - Unusual access to customer database
   - Bulk export of account information
   - Access to systems outside job function
   - After-hours activity on core banking systems
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
 
 ## Validation Checklist
 

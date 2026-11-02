@@ -1,14 +1,31 @@
 ---
 name: playbook-daily-watchlist-monitoring
-description: Tier 2 Playbook for daily monitoring and analysis of employees on insider threat watchlist. Provides structured procedures for processing Varonis logs (AD, Email, Fileserver), correlating activities across data sources, generating alerts, and escalating high-risk cases. Designed for Vietnamese banking environments with compliance requirements.
+description: "Run the daily insider-threat watchlist assessment over exported Varonis AD, email, and fileserver logs. Use for the morning SOC review of the employee watchlist, or when a new batch folder has been exported. Requires the batch CSV, the watchlist xlsx, and the scripts under D:/AI/Varonis Daily Logs/Monitoring."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: insider-threat
-tags: [playbook, tier-2, watchlist, daily-monitoring, insider-risk, Varonis, UEBA, correlation]
-version: "1.0"
-author: cybersecurity-expert-mode
-license: Apache-2.0
-mitre_attack: [T1074, T1114, T1041, T1074.001, T1530]
-nist_csf: [DE.CM-3, DE.AE-3, PR.AC-4, RS.RP-1]
+mitre_attack: [T1074, T1114, T1048, T1074.001, T1530]
+nist_csf: [DE.CM-3, DE.AE-3, PR.AA-05, RS.RP-1]
+tags:
+  - playbook
+  - tier-2
+  - watchlist
+  - daily-monitoring
+  - insider-risk
+  - Varonis
+  - UEBA
+  - correlation
+metadata:
+  owner: security-skills-team
+  tier: 2
+  source: local
 ---
 
 # Playbook: Daily Watchlist Monitoring (Tier 2)
@@ -332,8 +349,8 @@ When escalating, collect additional logs:
 | Regulation | Requirement | Application |
 |------------|-------------|-------------|
 | **Luật An ninh mạng 2018** | Protect information systems | Log retention, access monitoring |
-| **Nghị định 13/2023/NĐ-CP** | Personal data protection | Monitor PII access |
-| **Nghị định 356/2025/NĐ-CP** | Breach notification within 36 hours | Alert on data exfiltration |
+| **Nghị định 13/2023/NĐ-CP (đã hết hiệu lực 01/01/2026 - dùng Nghị định 356/2025/NĐ-CP, xem ../_shared/compliance-vietnam.md)** | Personal data protection | Monitor PII access |
+| **Nghị định 356/2025/NĐ-CP** | Breach notification within 72 hours | Alert on data exfiltration |
 | **NHNN Circulars** | IT security for financial institutions | Monitor financial data access |
 
 ### 6.2 Data Classification
@@ -349,7 +366,7 @@ PROTECTION REQUIREMENTS:
 ├── Log all access to sensitive data
 ├── Alert on off-hours access to sensitive data
 ├── Alert on bulk access to customer data
-└── Report breach within 36 hours (NĐ 356/2025)
+└── Report breach within 72 hours (NĐ 356/2025)
 ```
 
 ## 7. Automation Scripts
@@ -358,17 +375,16 @@ PROTECTION REQUIREMENTS:
 
 | Script | Purpose | Input | Output |
 |--------|---------|-------|--------|
-| `Process_AD_Log.py` | Process AD authentication logs | Raw AD CSV | Filtered log, summary, alerts |
-| `Process_Email_Log.py` | Process email activity logs | Raw Email CSV | Filtered log, summary, alerts |
-| `Process_Fileserver_Log.py` | Process fileserver activity logs | Raw Fileserver CSV | Filtered log, summary, alerts |
+| `analyze_watchlist_playbook.py` | Xử lý đồng thời AD + email + fileserver | Raw CSV export | `watchlist_{batch}_playbook_report.json` |
+
+
 
 ### 7.2 Execution Order
 
 ```
 DAILY PROCESSING:
-1. python Process_AD_Log.py
-2. python Process_Email_Log.py
-3. python Process_Fileserver_Log.py
+1. python "D:\AI\Varonis Daily Logs\Monitoring\scripts\analyze_watchlist_playbook.py" --batch <batch>
+2. python "D:\AI\Varonis Daily Logs\Monitoring\scripts\score_watchlist_jev.py" --batch <batch>
 4. Merge outputs and generate correlation report
 5. Review alerts and classify risk levels
 6. Generate daily report
@@ -390,3 +406,13 @@ DAILY PROCESSING:
 - [`analyzing-ueba-alerts-varonis`](../analyzing-ueba-alerts-varonis/SKILL.md) - Detailed Varonis UEBA analysis
 - [`analyzing-dlp-alerts`](../analyzing-dlp-alerts/SKILL.md) - DLP alert analysis
 - [`analyzing-email-audit-logs`](../analyzing-email-audit-logs/SKILL.md) - Email log analysis
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.

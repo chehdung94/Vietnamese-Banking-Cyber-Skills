@@ -1,20 +1,38 @@
 ---
-name: playbook-rdp-lateral-movement-response
-description: Tier 2 Playbook to investigate RDP lateral movement between internal users during after-hours. User A accessing User B's computer via RDP outside business hours. Covers compromised account detection, lateral movement analysis, and evidence preservation for banking environments.
+name: playbook-after-hours-internal-access-investigation
+description: "Investigate remote access to a bank endpoint outside business hours, including RDP lateral movement and file access after the account disable date. Use when the incident involves an RDP cache artifact, an off-hours logon, or a disabled account with activity. Not for business-hours access."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: incident-response
-tags: [playbook, tier-2, rdp, lateral-movement, after-hours, compromised-account, insider-threat, banking, vietnam]
-version: "1.1"
-author: cybersecurity-skills-mode
-license: Apache-2.0
-mitre_attack: [T1021.001, T1078, T1098, T1071, T1040, T1003]
-nist_csf: [DE.CM-3, DE.AE-3, PR.AC-4, RS.MI-1]
+mitre_attack: [T1021.001, T1078, T1098, T1071, T1048]
+nist_csf: [DE.CM-3, DE.AE-3, PR.AA-05, RS.MI-1]
+tags:
+  - playbook
+  - tier-2
+  - rdp
+  - lateral-movement
+  - after-hours
+  - compromised-account
+  - insider-threat
+  - banking
+  - vietnam
+metadata:
+  owner: security-skills-team
+  tier: 2
+  source: local
 ---
 
 # Playbook: RDP Lateral Movement Response (Tier 2)
 
 > **Tier:** 2 - Incident Response Playbook
-> **Triggered by:** [`playbook-master-incident-triage`](Vietnamese-Banking-Cyber-Skills/skills/playbook-master-incident-triage/SKILL.md)
+> **Triggered by:** [`playbook-master-incident-triage`](../playbook-master-incident-triage/SKILL.md)
 > **Calls Tier 3:** `analyzing-windows-event-logs`, `collecting-volatile-evidence`, `analyzing-ueba-alerts-varonis`
 
 ## Overview
@@ -23,7 +41,7 @@ Playbook này hướng dẫn điều tra sự cố **User A truy cập vào máy
 
 **Scenario:**
 - User A (Source) → RDP → User B's Computer (Target)
-- Thời gian: Ngoài giờ làm việc (22:00-06:00, cuối tuần, ngày lễ)
+- Thời gian: Ngoài giờ làm việc (ngoài 07:45-17:30, cuối tuần, ngày lễ)
 - Phương thức: Remote Desktop Protocol (RDP)
 
 **Các khả năng:**
@@ -32,7 +50,7 @@ Playbook này hướng dẫn điều tra sự cố **User A truy cập vào máy
 3. **Privilege Abuse:** User A có quyền nhưng sử dụng sai mục đích
 4. **Legitimate:** Có lý do chính đáng (IT support, dự án khẩn)
 
-**Ngữ cảnh áp dụng:** Ngân hàng Việt Nam, tuân thủ Nghị định 13/2023/NĐ-CP và các quy định của NHNN.
+**Ngữ cảnh áp dụng:** Ngân hàng Việt Nam, tuân thủ Nghị định 13/2023/NĐ-CP (đã hết hiệu lực 01/01/2026 - dùng Nghị định 356/2025/NĐ-CP, xem ../_shared/compliance-vietnam.md) và các quy định của NHNN.
 
 ## When to Use
 
@@ -104,21 +122,21 @@ Playbook này hướng dẫn điều tra sự cố **User A truy cập vào máy
 
 ### Step 2.2: User A Authentication Analysis (Tier 3 Skill Call)
 
-**Skill:** [`analyzing-azure-ad-signin-logs`](Vietnamese-Banking-Cyber-Skills/skills/analyzing-azure-ad-signin-logs/SKILL.md)
+**Skill:** [`analyzing-azure-ad-signin-logs`](../analyzing-azure-ad-signin-logs/SKILL.md)
 
 **Input:** User A's UPN, time range
 **Output:** Login location, device, impossible travel detection
 
 ### Step 2.3: Data Access Analysis (Tier 3 Skill Call)
 
-**Skill:** [`analyzing-ueba-alerts-varonis`](Vietnamese-Banking-Cyber-Skills/skills/analyzing-ueba-alerts-varonis/SKILL.md)
+**Skill:** [`analyzing-ueba-alerts-varonis`](../analyzing-ueba-alerts-varonis/SKILL.md)
 
 **Input:** User A's username, User B's computer name, time range
 **Output:** Files accessed, data volume, sensitivity classification
 
 ### Step 2.4: Forensic Collection (Tier 3 Skill Call - nếu cần)
 
-**Skill:** [`collecting-volatile-evidence-from-compromised-host`](Vietnamese-Banking-Cyber-Skills/skills/collecting-volatile-evidence-from-compromised-host/SKILL.md)
+**Skill:** [`collecting-volatile-evidence-from-compromised-host`](../collecting-volatile-evidence-from-compromised-host/SKILL.md)
 
 **Input:** User B's computer (target)
 **Output:** Memory dump, network connections, process list
@@ -283,7 +301,7 @@ Get-AzureADAuditSignInLogs -Filter "UserPrincipalName eq 'userA@domain.com'" |
 | Check | Normal | Observed | Risk |
 |-------|--------|----------|------|
 | Login Location | Office/VPN | External IP | High |
-| Login Time | 08:00-18:00 | 02:15 AM | High |
+| Login Time | 07:45-17:30 | 02:15 AM | High |
 | Device | Company laptop | Unknown device | High |
 | Activity Before RDP | Normal work | Suspicious activity | High |
 | RDP Pattern | IT support only | Random user access | Critical |
@@ -669,7 +687,7 @@ Thông tin này đang được điều tra. Vui lòng giữ bí mật."
 1. Xử lý kỷ luật User A (phối hợp HR)
 2. Rà soát lại quyền truy cập RDP
 3. Triển khai ghi hình RDP session
-4. Đánh giá thông báo User B (theo Nghị định 13/2023/NĐ-CP)
+4. Đánh giá thông báo User B (theo Nghị định 13/2023/NĐ-CP (đã hết hiệu lực 01/01/2026 - dùng Nghị định 356/2025/NĐ-CP, xem ../_shared/compliance-vietnam.md))
 
 **Bằng chứng pháp lý:** Đã thu thập và bảo quản theo quy trình.
 ```
@@ -679,27 +697,27 @@ Thông tin này đang được điều tra. Vui lòng giữ bí mật."
 ## 10. Related Skills
 
 ### Tier 1 (Entry Point)
-- [`playbook-master-incident-triage`](Vietnamese-Banking-Cyber-Skills/skills/playbook-master-incident-triage/SKILL.md) - Phân loại và điều hướng sự cố
+- [`playbook-master-incident-triage`](../playbook-master-incident-triage/SKILL.md) - Phân loại và điều hướng sự cố
 
 ### Tier 2 (Other Playbooks)
-- [`playbook-abnormal-user-behavior-response`](Vietnamese-Banking-Cyber-Skills/skills/playbook-abnormal-user-behavior-response/SKILL.md) - General UEBA response
-- [`playbook-phishing-response`](Vietnamese-Banking-Cyber-Skills/skills/playbook-phishing-response/SKILL.md) - Nếu User A bị phishing
+- [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - General UEBA response
+- [`playbook-phishing-response`](../playbook-phishing-response/SKILL.md) - Nếu User A bị phishing
 
 ### Tier 3 (Technical Skills)
 | Skill | Purpose | When to Call |
 |-------|---------|------------|
-| [`analyzing-ueba-alerts-varonis`](Vietnamese-Banking-Cyber-Skills/skills/analyzing-ueba-alerts-varonis/SKILL.md) | File access analysis | Step 2.3 - Data access |
-| [`analyzing-azure-ad-signin-logs`](Vietnamese-Banking-Cyber-Skills/skills/analyzing-azure-ad-signin-logs/SKILL.md) | User A authentication | Step 2.2 - Source analysis |
-| [`collecting-volatile-evidence-from-compromised-host`](Vietnamese-Banking-Cyber-Skills/skills/collecting-volatile-evidence-from-compromised-host/SKILL.md) | Memory/forensics | Step 2.4 - Deep forensics |
-| [`performing-windows-artifact-analysis-with-eric-zimmerman-tools`](Vietnamese-Banking-Cyber-Skills/skills/performing-windows-artifact-analysis-with-eric-zimmerman-tools/SKILL.md) | RDP cache analysis | Step 2.4 - Artifact analysis |
-| [`analyzing-windows-registry-for-artifacts`](Vietnamese-Banking-Cyber-Skills/skills/analyzing-windows-registry-for-artifacts/SKILL.md) | Registry analysis | Step 2.4 - USB/device history |
+| [`analyzing-ueba-alerts-varonis`](../analyzing-ueba-alerts-varonis/SKILL.md) | File access analysis | Step 2.3 - Data access |
+| [`analyzing-azure-ad-signin-logs`](../analyzing-azure-ad-signin-logs/SKILL.md) | User A authentication | Step 2.2 - Source analysis |
+| [`collecting-volatile-evidence-from-compromised-host`](../collecting-volatile-evidence-from-compromised-host/SKILL.md) | Memory/forensics | Step 2.4 - Deep forensics |
+| [`performing-windows-artifact-analysis-with-eric-zimmerman-tools`](../performing-windows-artifact-analysis-with-eric-zimmerman-tools/SKILL.md) | RDP cache analysis | Step 2.4 - Artifact analysis |
+| [`analyzing-windows-registry-for-artifacts`](../analyzing-windows-registry-for-artifacts/SKILL.md) | Registry analysis | Step 2.4 - USB/device history |
 
 ---
 
 ## 11. References
 
 - MITRE ATT&CK T1021.001 - Remote Desktop Protocol
-- Nghị định 13/2023/NĐ-CP - Bảo vệ dữ liệu cá nhân
+- Nghị định 13/2023/NĐ-CP (đã hết hiệu lực 01/01/2026 - dùng Nghị định 356/2025/NĐ-CP, xem ../_shared/compliance-vietnam.md) - Bảo vệ dữ liệu cá nhân
 - Windows Security Event Reference (4624, 4625, 4648, 4778, 4779)
 - NIST SP 800-61 - Incident Handling Guide
 
@@ -708,3 +726,13 @@ Thông tin này đang được điều tra. Vui lòng giữ bí mật."
 *Document Version: 1.1*  
 *Last Updated: 09/04/2026*  
 *Classification: Internal Use - Banking Security*
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.

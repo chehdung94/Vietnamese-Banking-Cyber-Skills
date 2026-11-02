@@ -1,14 +1,31 @@
 ---
 name: analyzing-vpn-logs
-description: Analyzes VPN connection logs from firewall, SSL VPN, or network access control systems to detect unauthorized access, anomalous connection patterns, and potential security incidents involving remote access.
+description: "Analyze VPN concentrator logs from ASA, FortiGate, Palo Alto, Pulse Secure, or Azure VPN Gateway for credential abuse, brute force, and anomalous sessions. Use when a VPN CSV export or syslog set is provided."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: network-security
-tags: [vpn, ssl-vpn, network-access, remote-access, connection-analysis, firewall-logs, incident-response, insider-threat]
-version: "1.1"
-author: cybersecurity-skills-mode
-license: Apache-2.0
-mitre_attack: [T1133, T1021, T1078, T1086]
-nist_csf: [DE.CM-1, DE.AE-1, PR.AC-3, PR.AC-7]
+mitre_attack: [T1133, T1021, T1078, T1059.001]
+nist_csf: [DE.CM-1, DE.AE-1, PR.AA-01, PR.AA-06]
+tags:
+  - [vpn
+  - ssl-vpn
+  - network-access
+  - remote-access
+  - connection-analysis
+  - firewall-logs
+  - incident-response
+  - insider-threat]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: local
 ---
 
 # Analyzing VPN Logs
@@ -65,9 +82,9 @@ Logs/*ASA*.csv
 Logs/*PaloAlto*.csv
 ```
 
-**Use list_files tool to explore Logs directory:**
+**Dùng Glob để liệt kê file log trong thư mục Logs:**
 ```bash
-list_files(path="Logs", recursive=false)
+Glob("**/Logs/*.csv")
 ```
 
 ### Step 2 – Parse and Validate VPN Log Structure
@@ -381,6 +398,16 @@ When analyzing VPN logs in Vietnamese banking environment:
 10.10.0.0/16    # SSL VPN pool
 10.100.0.0/16   # Remote access
 ```
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
 
 ## Validation Checklist
 

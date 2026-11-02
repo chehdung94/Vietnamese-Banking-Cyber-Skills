@@ -1,13 +1,30 @@
 ---
 name: playbook-abnormal-user-behavior-response
-description: Tier 2 Playbook to respond to abnormal user behavior incidents detected by UEBA systems. Provides checklists for evidence collection, behavioral analysis, insider threat assessment, and remediation steps for anomalous activities detected by Varonis or similar UEBA platforms.
+description: "Score and investigate insider-threat signals across AD, mail, and file activity with the shared 7-indicator matrix. Use when a user profile deviates from its baseline or a watchlist alert needs a risk level. The qualitative layer is contract-gated, never free-form judgement."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: incident-response
-tags: [playbook, tier-2, UEBA, abnormal-behavior, insider-threat, Varonis, incident-response, DFIR]
-version: "1.2"
-author: cybersecurity-skills-mode
-license: Apache-2.0
 mitre_attack: [T1074, T1114, T1098, T1526]
+tags:
+  - playbook
+  - tier-2
+  - UEBA
+  - abnormal-behavior
+  - insider-threat
+  - Varonis
+  - incident-response
+  - DFIR
+metadata:
+  owner: security-skills-team
+  tier: 2
+  source: local
 ---
 
 # Playbook: Abnormal User Behavior Response (Tier 2)
@@ -45,8 +62,8 @@ Triggered by the **Master Incident Triage** playbook when an incident is classif
 
 | Metric | Baseline (Normal) | Observed (Anomaly) | Delta |
 |--------|------------------|-------------------|-------|
-| **Login Hours** | 08:00-18:00 | After hours access | +4h |
-| **Data Access Volume** | ~50 files/day | 5000+ files accessed | +100x |
+| **Login Hours** | 07:45-17:30 | After hours access | +4h |
+| **Data Access Volume** | ~50 files/day | ≥ 500 files / 4 min | +100x |
 | **Unique Locations** | Office IP only | Multiple VPN locations | +3 locations |
 | **Sensitive Data Access** | Rarely | Daily, large queries | New pattern |
 | **Export Activity** | None | CSV/Excel exports | New activity |
@@ -138,7 +155,7 @@ Triggered by the **Master Incident Triage** playbook when an incident is classif
 
 | Thao tác | Ngưỡng Cảnh báo | Mức độ | Mô tả |
 |----------|------------------|--------|-------|
-| **Mở tệp hàng loạt** | ≥ 5,000 tệp trong ≤ 4 phút | 🔴 Cao | Phản ánh hoạt động sao chép hoặc truy xuất dữ liệu hàng loạt |
+| **Mở tệp hàng loạt** | ≥ 500 tệp trong ≤ 4 phút | 🔴 Cao | Phản ánh hoạt động sao chép hoặc truy xuất dữ liệu hàng loạt |
 | **Xóa tệp** | Vượt ngưỡng baseline + 3σ | 🟡 Trung bình | Có thể là cố gắng che giấu dấu vết |
 | **Cắt (Move) tệp** | Vượt ngưỡng baseline + 3σ | 🟡 Trung bình | Di chuyển dữ liệu ra khỏi vị trí thông thường |
 | **Tải tệp xuống** | Vượt ngưỡng baseline + 3σ | 🔴 Cao | Khối lượng tải vượt mức bình thường |
@@ -587,3 +604,13 @@ Timeline Format:
 - [`analyzing-ueba-alerts-varonis`](analyzing-ueba-alerts-varonis/SKILL.md) - Detailed Varonis UEBA alert analysis
 - [`playbook-data-leak-response`](playbook-data-leak-response/SKILL.md) - Data breach response (if exfiltration confirmed)
 - [`playbook-master-incident-triage`](../playbook-master-incident-triage/SKILL.md) - Entry point for incident classification
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.

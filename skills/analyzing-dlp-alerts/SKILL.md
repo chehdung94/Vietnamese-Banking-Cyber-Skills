@@ -1,18 +1,32 @@
 ---
 name: analyzing-dlp-alerts
-description: Analyzes Data Loss Prevention (DLP) alerts from Microsoft Purview, Varonis, or Symtcc DLP to identify potential data exfiltration attempts. Provides step-by-step analysis procedures, IOC extraction, and escalation criteria for data leak incidents.
+description: "Triage data-loss-prevention alerts from Purview or Varonis into confirmed, allowed, and policy-error cases with a severity. Use when a DLP alert export is supplied or a suspected leak must be classified. Never auto-execute containment."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: data-loss-prevention
-tags: [DLP, data-leak, exfiltration, Microsoft Purview, Varonis, alerts, incident-response]
-version: "1.1"
-author: cybersecurity-skills-mode
-license: Apache-2.0
-mitre_attack: [T1041, T1074, T1115]
-prerequisites:
-  - DLP solution (Microsoft Purview, Varonis DLP, or Symtcc)
-  - Access to DLP alert dashboard
-  - SIEM correlation capability (optional)
+mitre_attack: [T1048, T1074, T1115]
+prerequisites: DLP solution (Microsoft Purview, Varonis DLP, or Symtcc) Access to DLP alert dashboard SIEM correlation capability (optional)
 expected_output: JSON format with alert analysis and recommendations
+tags:
+  - [DLP
+  - data-leak
+  - exfiltration
+  - Microsoft
+  - Purview
+  - Varonis
+  - alerts
+  - incident-response]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: local
 ---
 
 # Analyzing DLP Alerts (Tier 3)
@@ -30,7 +44,7 @@ Triggered by:
 |----------|----------------|
 | **Microsoft Purview** | Purview Compliance Portal, PowerShell |
 | **Varonis DLP** | Varonis WebGUI, Export Reports |
-| **Symtcc DLP** | DLP Console, Event Logs |
+| **Symantec DLP** | DLP Console, Event Logs |
 | **Generic Syslog** | SIEM Query (Splunk, ELK, QRadar) |
 
 ---
@@ -265,6 +279,16 @@ Set-SPOTenant -DisablePersonalFeatures $true
 ---
 
 ## Related Playbooks
-- [`playbook-data-leak-response`](../playbook-data-leak-response/SKILL.md) - Full data breach response
+- [`playbook-data-leak-response`](../_drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
 - [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Insider threat investigation
 - [`analyzing-ueba-alerts-varonis`](../analyzing-ueba-alerts-varonis/SKILL.md) - UEBA correlation
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.

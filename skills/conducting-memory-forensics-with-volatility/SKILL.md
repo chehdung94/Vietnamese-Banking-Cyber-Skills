@@ -1,16 +1,26 @@
 ---
 name: conducting-memory-forensics-with-volatility
-description: >
-  Performs memory forensics analysis using Volatility 3 to extract evidence of
-  malware execution, process injection, network connections, and credential theft
-  from RAM dumps captured during incident response. Covers memory acquisition,
-  process analysis, DLL inspection, and malware detection.
+description: "Run Volatility 3 against a memory dump to recover process, injection, network, and credential artifacts. Use when a memory image in .raw, .mem, or .dmp format is available. Requires Volatility 3 and symbol tables."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: incident-response
-tags: [memory-forensics, volatility, RAM-analysis, process-injection, DFIR]
-version: "1.0.0"
-author: mahipal
-license: Apache-2.0
+tags:
+  - [memory-forensics
+  - volatility
+  - RAM-analysis
+  - process-injection
+  - DFIR]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: local
 ---
 
 # Conducting Memory Forensics with Volatility
@@ -127,6 +137,16 @@ vol -f memory.raw windows.timeliner
 | Malicious network connection | T1071 | High |
 | LSASS access | T1003.001 | Critical |
 | Injected code (malfind) | T1055 | Critical |
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
 
 ## References
 

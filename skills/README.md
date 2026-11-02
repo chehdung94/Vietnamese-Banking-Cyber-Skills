@@ -31,6 +31,11 @@ skills/
 
 ---
 
+## Tài liệu dùng chung
+
+Bốn tài liệu trong `_shared/` là nguồn sự thật duy nhất cho pháp lý, thang phân cấp, khung giờ làm việc
+và mapping MITRE/NIST. Mọi skill tham chiếu chúng thay vì lặp lại (giảm ~30% token và loại mâu thuẫn).
+
 ## Danh mục Skills
 
 ### DFIR (Digital Forensics & Incident Response)
@@ -41,8 +46,8 @@ skills/
 | `conducting-memory-forensics-with-volatility` | Memory Forensics | Phân tích memory dump với Volatility |
 | `performing-windows-artifact-analysis-with-eric-zimmerman-tools` | Windows Forensics | Phân tích artifact Windows với EZ Tools |
 | `analyzing-windows-registry-for-artifacts` | Registry Forensics | Phân tích Windows Registry |
-| `conducting-phishing-incident-response` | Incident Response | IR cho sự cố phishing |
-| `triaging-security-incident-with-ir-playbook` | Incident Response | Phân loại và ưu tiên incident |
+| `playbook-phishing-response` | Incident Response | IR cho sự cố phishing |
+| `playbook-master-incident-triage` | Incident Response | Phân loại và ưu tiên incident |
 | `performing-network-forensics-with-wireshark` | Network Forensics | Phân tích network traffic với Wireshark |
 | `collecting-volatile-evidence-from-compromised-host` | Live Forensics | Thu thập volatile evidence từ host bị compromise |
 
@@ -78,7 +83,7 @@ version: "1.0"
 author: author-name
 license: Apache-2.0
 mitre_attack: [T1234, T5678]
-nist_csf: [DE.CM-1, PR.AC-4]
+nist_csf: [DE.CM-1, PR.AA-05]
 ---
 ```
 

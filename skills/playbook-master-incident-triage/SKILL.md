@@ -1,12 +1,26 @@
 ---
 name: playbook-master-incident-triage
-description: Master playbook to classify and prioritize security incidents, determine severity, assign response teams, and initiate appropriate Tier 2 Incident Playbooks.
+description: "Classify a security incident into P1-P4 and route it to the matching incident playbook. Use as the entry point for any new incident report, alert, or request that names an incident type. Covers routing only, not deep technical analysis."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: incident-response
-tags: [playbook, master, triage, severity-classification, routing, DFIR]
-version: "1.2"
-author: cybersecurity-skills-mode
-license: Apache-2.0
+tags:
+  - playbook
+  - master
+  - triage
+  - severity-classification
+  - routing
+  - DFIR
+metadata:
+  owner: security-skills-team
+  tier: 1
+  source: local
 ---
 
 # Playbook: Master Incident Triage
@@ -100,9 +114,9 @@ Based on the initial assessment, route the incident to the appropriate Tier 2 Pl
 | Incident Type | Condition | Action (Route To) |
 |---------------|-----------|-------------------|
 | **Phishing** | Malicious email, credential harvesting, malware attachment | `playbook-phishing-response` |
-| **Malware/Ransomware** | File encryption, unknown processes, C2 traffic | `playbook-malware-response` |
+| **Malware/Ransomware** | File encryption, unknown processes, C2 traffic | `playbook-malware-response` (CHƯA CÓ - leo thang CIRT, cách ly hệ thống) |
 | **Data Leak** | Unauthorized access, large data transfer | `playbook-data-leak-response` |
-| **Insider Threat** | Abnormal behavior by authenticated user | `playbook-insider-threat-response` |
+| **Insider Threat** | Abnormal behavior by authenticated user | `playbook-abnormal-user-behavior-response` |
 | **Pre-Departure Review** | HR notification, offboarding, preventive compliance review | `playbook-abnormal-user-behavior-response` |
 | **General/Unknown** | P1/P2 Active attack but type unknown | Escalate to CIRT, Isolate systems |
 
@@ -143,6 +157,16 @@ Based on the initial assessment, route the incident to the appropriate Tier 2 Pl
   "documentation": "Link to incident record"
 }
 ```
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
 
 ## Validation Checklist
 

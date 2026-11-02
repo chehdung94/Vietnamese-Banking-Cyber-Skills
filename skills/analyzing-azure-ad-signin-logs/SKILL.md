@@ -1,19 +1,32 @@
 ---
 name: analyzing-azure-ad-signin-logs
-description: Analyzes Azure Active Directory sign-in logs to detect account compromise, anomalous login patterns, and potential insider threat activities. Provides log analysis procedures, detection rules, and correlation with UEBA alerts.
+description: "Analyze Entra ID and Azure AD sign-in logs for account compromise, password spraying, and impossible travel. Use when a sign-in or risky-sign-in export is provided, or an identity incident needs a timeline. Detection thresholds live in references/thresholds.md."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: identity-security
-tags: [Azure AD, Identity, signin-logs, account-takeover, insider-threat, Microsoft,UEBA]
-version: "1.0"
-author: cybersecurity-skills-mode
-license: Apache-2.0
 mitre_attack: [T1078, T1110, T1098]
-prerequisites:
-  - Azure AD Premium P1/P2 license
-  - Access to Azure AD Sign-in logs
-  - Microsoft Sentinel or Log Analytics (optional)
-  - AzureAD PowerShell module
+prerequisites: Azure AD Premium P1/P2 license Access to Azure AD Sign-in logs Microsoft Sentinel or Log Analytics (optional) AzureAD PowerShell module
 expected_output: JSON format with login analysis and threat indicators
+tags:
+  - [Azure
+  - AD
+  - Identity
+  - signin-logs
+  - account-takeover
+  - insider-threat
+  - Microsoft
+  - UEBA]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: local
 ---
 
 # Analyzing Azure AD Sign-in Logs (Tier 3)
@@ -136,7 +149,7 @@ Get-AzureADAuditSignInLogs -Filter "Status/ErrorCode eq 50053" |
 
 | Pattern | Normal Hours | Suspicious Hours |
 |---------|--------------|------------------|
-| **Weekday** | 06:00 - 22:00 | 22:00 - 06:00 |
+| **Weekday** | 07:45 - 17:30 | 17:30 - 07:45 |
 | **Weekend** | No access expected | Any access |
 | **Holiday** | No access expected | Any access |
 
@@ -309,4 +322,14 @@ $recent | Where-Object { $baseline -notcontains $_.Location }
 ## Related Playbooks
 - [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Full behavioral investigation
 - [`playbook-phishing-response`](../playbook-phishing-response/SKILL.md) - Post-phishing account check
-- [`playbook-data-leak-response`](../playbook-data-leak-response/SKILL.md) - Initial access investigation
+- [`playbook-data-leak-response`](../_drafts/playbook-data-leak-response/SKILL.md) - Initial access investigation
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.

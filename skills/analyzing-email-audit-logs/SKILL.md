@@ -1,19 +1,32 @@
 ---
 name: analyzing-email-audit-logs
-description: Analyzes email audit logs from Exchange Online, Microsoft 365, or on-premises Exchange to detect data exfiltration via email, phishing campaigns, and unauthorized email rules. Provides log analysis procedures and exfiltration detection.
+description: "Analyze Exchange and M365 message traces for exfiltration to personal mailboxes, forwarding rules, and inbox rules. Use when a message trace, mailbox audit, or suspicious outbound mail is provided. Standalone-email decisions follow references/decision-procedure.md."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: email-security
-tags: [email, Exchange, M365, audit-logs, exfiltration, BEC, phishing, data-leak]
-version: "1.1"
-author: cybersecurity-skills-mode
-license: Apache-2.0
-mitre_attack: [T1114, T1566, T1041]
-prerequisites:
-  - Exchange Online PowerShell or Exchange Admin Center
-  - Microsoft 365 E3/E5 license
-  - Audit log search enabled
-  - Mail gateway logs (optional)
+mitre_attack: [T1114, T1566, T1048]
+prerequisites: Exchange Online PowerShell or Exchange Admin Center Microsoft 365 E3/E5 license Audit log search enabled Mail gateway logs (optional)
 expected_output: JSON format with email analysis and exfiltration indicators
+tags:
+  - [email
+  - Exchange
+  - M365
+  - audit-logs
+  - exfiltration
+  - BEC
+  - phishing
+  - data-leak]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: local
 ---
 
 # Analyzing Email Audit Logs (Tier 3)
@@ -370,6 +383,16 @@ Get-InboxRule -Mailbox "huyhq@domain.com" |
 ---
 
 ## Related Playbooks
-- [`playbook-data-leak-response`](../playbook-data-leak-response/SKILL.md) - Full data breach response
+- [`playbook-data-leak-response`](../_drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
 - [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Insider threat investigation
 - [`playbook-phishing-response`](../playbook-phishing-response/SKILL.md) - Phishing investigation
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.

@@ -1,19 +1,34 @@
 ---
 name: analyzing-cloud-storage-audit-logs
-description: Analyzes cloud storage audit logs from Microsoft OneDrive, SharePoint, Azure Blob, AWS S3, and Google Drive to detect data exfiltration via cloud storage. Provides log analysis procedures and exfiltration detection for SaaS data leaks.
+description: "Analyze OneDrive, SharePoint, S3, and Azure cloud storage audit logs for mass download, external sharing, and credential exposure. Use when a cloud storage export or CloudTrail log set is provided. Remediation commands are proposals and require explicit user approval."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: cloud-security
-tags: [cloud, OneDrive, SharePoint, Azure Blob, AWS S3, exfiltration, DLP, CASB]
-version: "1.0"
-author: cybersecurity-skills-mode
-license: Apache-2.0
-mitre_attack: [T1041, T1074, T1567]
-prerequisites:
-  - Cloud storage admin access or CASB solution
-  - Microsoft 365, AWS, or GCP audit logs enabled
-  - SharePoint Online PowerShell or Graph API (for M365)
-  - CloudTrail (AWS), Cloud Audit Logs (GCP)
+mitre_attack: [T1048, T1074, T1567]
+prerequisites: Cloud storage admin access or CASB solution Microsoft 365, AWS, or GCP audit logs enabled SharePoint Online PowerShell or Graph API (for M365) CloudTrail (AWS), Cloud Audit Logs (GCP)
 expected_output: JSON format with cloud activity analysis and exfiltration indicators
+tags:
+  - [cloud
+  - OneDrive
+  - SharePoint
+  - Azure
+  - Blob
+  - AWS
+  - S3
+  - exfiltration
+  - DLP
+  - CASB]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: local
 ---
 
 # Analyzing Cloud Storage Audit Logs (Tier 3)
@@ -355,6 +370,16 @@ New-AzStorageAccountSASToken -Service Blob -ResourceType Container,Object `
 ---
 
 ## Related Playbooks
-- [`playbook-data-leak-response`](../playbook-data-leak-response/SKILL.md) - Full data breach response
+- [`playbook-data-leak-response`](../_drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
 - [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Insider threat investigation
 - [`analyzing-dlp-alerts`](../analyzing-dlp-alerts/SKILL.md) - DLP correlation
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.

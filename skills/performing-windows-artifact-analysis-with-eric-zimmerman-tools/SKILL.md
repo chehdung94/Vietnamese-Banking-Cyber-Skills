@@ -1,12 +1,27 @@
 ---
 name: performing-windows-artifact-analysis-with-eric-zimmerman-tools
-description: Perform comprehensive Windows forensic artifact analysis using Eric Zimmerman's open-source EZ Tools suite including KAPE, MFTECmd, PECmd, LECmd, JLECmd, and Timeline Explorer for parsing registry hives, prefetch files, event logs, and file system metadata.
+description: "Run KAPE and Eric Zimmerman tools to collect and triage Windows artifacts, then build a normalized timeline. Use when a live or disk Windows artifact set must be parsed into events."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: digital-forensics
-tags: [windows-forensics, eric-zimmerman, registry, prefetch, artifact-analysis, DFIR]
-version: "1.0"
-author: mahipal
-license: Apache-2.0
+tags:
+  - [windows-forensics
+  - eric-zimmerman
+  - registry
+  - prefetch
+  - artifact-analysis
+  - DFIR]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: upstream:mukul975/Anthropic-Cybersecurity-Skills
 ---
 
 # Performing Windows Artifact Analysis with Eric Zimmerman Tools
@@ -111,6 +126,16 @@ JLECmd.exe -d C:\Users\*\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDesti
 | BAM/DAM | SYSTEM | Background activity |
 | Prefetch | Prefetch folder | Application usage |
 | ShimCache | SYSTEM | Program execution |
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
 
 ## References
 

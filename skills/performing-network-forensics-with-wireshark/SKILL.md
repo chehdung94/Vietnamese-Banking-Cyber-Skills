@@ -1,12 +1,26 @@
 ---
 name: performing-network-forensics-with-wireshark
-description: Capture and analyze network traffic using Wireshark and tshark to reconstruct network events, extract artifacts, and identify malicious communications.
+description: "Analyze PCAP captures with tshark to reconstruct sessions, extract transferred objects, and identify C2 or exfiltration traffic. Use when a .pcap or .pcapng file is provided."
+allowed-tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+license: Apache-2.0
+compatibility: droid
+version: 2.0.0
 domain: cybersecurity
 subdomain: network-forensics
-tags: [network-forensics, wireshark, packet-analysis, traffic-analysis, DFIR]
-version: "1.0"
-author: mahipal
-license: Apache-2.0
+tags:
+  - [network-forensics
+  - wireshark
+  - packet-analysis
+  - traffic-analysis
+  - DFIR]
+metadata:
+  owner: security-skills-team
+  tier: 3
+  source: local
 ---
 
 # Performing Network Forensics with Wireshark
@@ -161,6 +175,16 @@ tshark -r capture.pcap -Y "http.file_data" --export-objects "http,exported_files
 | Unusual HTTPS to foreign IP | C2, data theft | Block, IR |
 | Large upload to external IP | Possible exfiltration | Block, assess data |
 | SMB to external IP | Lateral movement | Block, incident |
+
+## Rules (bat buoc)
+
+1. Khong duoc xuat gia tri khong co trong bang chung duoc cung cap. Truong khong co du lieu ghi `[NOT_AVAILABLE]` va liet ke artefact con thieu.
+2. Thieu log, truong du lieu, baseline hoac scope -> tra `insufficient_evidence` kem danh sach artefact can bo sung. Khong suy doan.
+3. Khong bia: hash, IP, ten nguoi dung, ma ticket, mu/sigma, ID su co, timestamp, so luong. Khong co du lieu thi noi ro la chua co.
+4. Moi moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`. Khong dung tri nho.
+5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
+6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
+7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
 
 ## References
 
