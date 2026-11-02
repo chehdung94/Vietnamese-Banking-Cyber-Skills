@@ -1,6 +1,6 @@
 ---
 name: performing-network-forensics-with-wireshark
-description: "Analyze PCAP captures with tshark to reconstruct sessions, extract transferred objects, and identify C2 or exfiltration traffic. Use when a .pcap or .pcapng file is provided."
+description: "Analyze PCAP captures with tshark to reconstruct sessions, extract transferred objects and identify C2 or exfiltration traffic. Use when a .pcap or .pcapng file is provided for a DFIR case. Not for firewall or proxy log analysis and not for live traffic interception."
 allowed-tools:
   - Read
   - Grep
@@ -8,15 +8,25 @@ allowed-tools:
   - Bash
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
 domain: cybersecurity
 subdomain: network-forensics
+mitre_attack:
+  - T1071
+  - T1048
+  - T1021.001
+  - T1110
+nist_csf:
+  - DE.CM-1
+  - DE.CM-3
+  - DE.AE-1
+  - DE.AE-3
 tags:
-  - [network-forensics
+  - network-forensics
   - wireshark
   - packet-analysis
   - traffic-analysis
-  - DFIR]
+  - DFIR
 metadata:
   owner: security-skills-team
   tier: 3
@@ -27,154 +37,127 @@ metadata:
 
 ## Overview
 
-Network forensics is critical for understanding attacker methodology, identifying C2 communications, and reconstructing events when disk/memory evidence is unavailable. Wireshark and tshark provide comprehensive packet capture analysis capabilities.
+Phan tich goi tin cho phep tai khoi hanh dong cua ke tu, xac nhan C2 va phat hien dau hieu
+du lieu bi rut ra ngoai khi bang chung dia va RAM khong con. Skill nay dung tshark va Wireshark
+de phan tich file capture.
+
+> Muc thoi gian phap ly: xem `../_shared/compliance-vietnam.md` (nguon su fact duy nhat).
+> Phan cap P1-P4: xem `../_shared/severity-and-escalation.md`.
 
 ## When to Use
 
-- Investigating network-based attacks
-- Identifying C2 communications
-- Reconstructing attacker movements
-- Validating incident timelines
-- Detecting data exfiltration
-- Analyzing protocol anomalies
+- Dieu tra cuoc tan cong dua tren mang.
+- Xac nhan giao tiep voi may chay C2.
+- Tai khoi duong dan di chuyen cua ke tu.
+- Doi chieu va xac nhan timeline su co.
+- Phat hien du lieu bi rut ra ngoai.
+- Phan tich bat thuong giao thuc.
+
+**Khong dung cho skill nay:** phan tich log firewall/proxy/DNS (dung skill phu hop dang co),
+phap tich capture truc tiep tren duong truyen (khong thuoc pham vi skill nay), hoac phan tich
+dia/RAM (dung `../performing-windows-artifact-analysis-with-eric-zimmerman-tools/SKILL.md` va
+`../conducting-memory-forensics-with-volatility/SKILL.md`).
 
 ## Prerequisites
 
-- Packet capture files (.pcap, .pcapng)
-- Network diagrams and logs
-- Timeline of incident
-- Understanding of normal baseline traffic
+- File capture: `.pcap` hoac `.pcapng`, kem hash SHA-256.
+- tshark (Wireshark) va tshark filters can dung.
+- So do mang va danh sach dia chi IP/trang thuoc noi bo trong pham vi.
+- Moc thoi gian su co va khoang thoi gian capture bao phu.
+- Baseline luu luong chuan de so sanh (tham chieu `../_shared/off-hours-and-baseline.md`).
+- Danh sach dich vu/dich vu hop le va danh sach cho phep de doi chieu IOC.
 
-## Tools
+**STOP rule:** Neu thieu mot dieu kien bat buoc o tren, dung tai buoc do, khong phan tich tiep.
+Tra `insufficient_evidence` va liet ke artefact con thieu theo Rules dong 1-2.
+Neu khong co file capture, hoac khong biet capture bao phu khoang thoi gian nao, dung - ket luan
+ve hanh dong se khong co gia tri.
 
-| Tool | Purpose |
-|------|---------|
-| Wireshark | GUI packet analysis |
-| tshark | Command-line packet analysis |
-| CapLoader | Large pcap rapid analysis |
-| NetworkMiner | Automatic artifact extraction |
+## Execution Steps
 
-## Steps
+### Step 1: Danh gia file capture
 
-### Step 1: Initial Assessment
+Ghi ten file, kich thuoc, hash SHA-256, va khoang thoi gian capture. Chay `tshark -q -z io,phs`
+de lay thong ke protocol va so goi tin.
 
-**File Properties:**
-```bash
-# Get pcap statistics without opening GUI
-tshark -r capture.pcap -q -z io,phs
+### Step 2: Xac dinh endpoint va conversation
 
-# Check file type and size
-ls -lh capture.pcap
-file capture.pcap
-```
+Liet ke dia chi IP duy nhat va bang conversation (`-z conv,ip`). Phan tach host noi bo va host
+ngoai theo so do mang. Ket qua nay la danh sach endpoint de doi chieu.
 
-### Step 2: Identify Endpoints
+### Step 3: Phan tich DNS
 
-```bash
-# List all unique IP addresses
-tshark -r capture.pcap -Y "ip" -T fields -e ip.src | sort -u
+Trich xuat `dns.qry.name` kem `ip.src`. So sanh voi danh sach dich vu hop le. Truy van lai
+lap lai va ten subdomain la doi tuong can dieu tra.
 
-# List all conversations
-tshark -r capture.pcap -q -z conv,ip
-```
+### Step 4: Phan tich HTTP/HTTPS
 
-### Step 3: Analyze DNS Traffic
+Trich xuat host, URI, user-agent va tai doi giao thuc. Export object trong HTTP de lay file
+da truyen, hash SHA-256 moi file truoc khi dua vao danh sach IOC.
 
-```bash
-# Extract DNS queries
-tshark -r capture.pcap -Y "dns" -T fields -e ip.src -e dns.qry.name
+### Step 5: Phat hien chi bao C2 va exfiltration
 
-# Look for suspicious domains
-tshark -r capture.pcap -Y "dns" | grep -E "(darknet|tor|exfil)"
-```
+Ap dung bang chi bao tai `references/thresholds.md`: beaconing, DNS tunneling, user-agent khac
+thuong, luong du lieu lon ra ngoai, giao thuc lao ra ngoai. Moi chi bao phai kem bang chung
+filter cu the.
 
-### Step 4: Investigate HTTP/HTTPS
+### Step 6: Tai khoi timeline va phan cap
 
-```bash
-# Extract HTTP URLs
-tshark -r capture.pcap -Y "http.request.method == GET" -T fields -e ip.src -e http.host -e http.request.uri
+Dung `follow,tcp` va `follow,udp` de doc noi dung stream, dua vao timeline su co. Chuan hoa moc
+thoi gian theo `../_shared/off-hours-and-baseline.md`. Phan cap theo
+`../_shared/severity-and-escalation.md`, chi de xuat hanh dong khac phuc (Rules dong 6).
 
-# Export objects from pcap
-$and = "http"
-for ($i=0; $i -lt 10; $i++) { 
-    Export-Objects -Path . -Index $i -Type $and 
-}
-```
+Chi tiet command: `references/wireshark-analysis-sop.md`.
 
-### Step 5: Detect C2 Indicators
+## Expected Output
 
-**Common C2 Protocols:**
-| Protocol | Indicators | Ports |
-|----------|-----------|-------|
-| HTTP/S | Long URI, uncommon headers | 80, 443, 8080 |
-| DNS | High frequency, large responses | 53 |
-| ICMP | Data exfiltration | N/A |
-| SSH | Unusual times, large volumes | 22 |
-
-**tshark C2 Detection:**
-```bash
-# Detect beaconing (regular intervals)
-tshark -r capture.pcap -Y "http" -T fields -e ip.src -e ip.dst -e frame.time_delta | sort | uniq -c | sort -rn
-
-# Look for suspicious user agents
-tshark -r capture.pcap -Y "http.user_agent" -T fields -e http.user_agent | sort | uniq -c | sort -rn
-```
-
-### Step 6: Reconstruct Events
-
-```bash
-# Follow TCP stream
-tshark -r capture.pcap -Y "ip.addr == 192.168.1.100 and tcp.port == 443" -z "follow,tcp,ascii,0"
-
-# Extract files from HTTP
-tshark -r capture.pcap -Y "http.file_data" --export-objects "http,exported_files"
-```
-
-## Output Format
+1. **Bao cao** (markdown): thong tin file capture, danh sach endpoint, ket qua DNS/HTTP, bang chi
+   bao C2 va exfiltration, danh sach IOC (IP, domain, URL, hash), phan cap P1-P4, hanh dong de
+   xuat, gioi han phan tich.
+2. **JSON** (mau):
 
 ```json
 {
-  "pcap_analysis": {
-    "file": "capture.pcap",
-    "duration": "HH:MM:SS",
-    "total_packets": 0,
-    "total_bytes": 0
+  "skill": "performing-network-forensics-with-wireshark",
+  "status": "ok",
+  "scope": {
+    "capture_file": "",
+    "sha256": "",
+    "capture_window": "",
+    "total_packets": 0
   },
-  "endpoints": {
-    "internal": [],
-    "external": []
-  },
-  "conversations": {
-    "total": 0,
-    "high_volume": []
-  },
-  "dns_findings": {
-    "suspicious_domains": [],
-    "high_frequency_queries": []
-  },
-  "http_findings": {
-    "suspicious_urls": [],
-    "malicious_user_agents": []
-  },
-  "c2_indicators": [],
-  "ioc_list": {
+  "summary": {},
+  "findings": [
+    {
+      "indicator": "",
+      "filter_used": "",
+      "assessment": "",
+      "evidence": "",
+      "hypothesis": ""
+    }
+  ],
+  "indicators": {
     "ips": [],
     "domains": [],
-    "urls": []
+    "urls": [],
+    "hashes": []
   },
-  "reconstructed_timeline": []
+  "severity": "P2",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": []
 }
 ```
 
-## Key Findings for Banking Investigations
+## References
 
-| Finding | Concern | Action |
-|---------|---------|--------|
-| Connection to Tor exit node | C2, anonymization | Block, escalate |
-| DNS tunneling pattern | Data exfiltration | Block, investigate |
-| Unusual HTTPS to foreign IP | C2, data theft | Block, IR |
-| Large upload to external IP | Possible exfiltration | Block, assess data |
-| SMB to external IP | Lateral movement | Block, incident |
+- `references/thresholds.md` - bang nguong phan tich va bang chi bao C2/exfiltration.
+- `references/wireshark-analysis-sop.md` - command tshark theo buoc va quy tac phan tich.
+- `../_shared/mitre-nist-mapping.md` - danh sach ID MITRE ATT&CK v18 va NIST CSF 2.0 duy nhat.
+- `../_shared/severity-and-escalation.md` - thang phan cap P1-P4 va ma leo thang.
+- `../_shared/compliance-vietnam.md` - moc thoi gian phap ly.
+- `../_shared/off-hours-and-baseline.md` - chuan hoa moc thoi gian va baseline luu luong.
+- Wireshark User Guide: https://www.wireshark.org/docs/wsug_html_chunked/
+- SANS FOR572 - Network Forensics.
 
 ## Rules (bat buoc)
 
@@ -185,10 +168,3 @@ tshark -r capture.pcap -Y "http.file_data" --export-objects "http,exported_files
 5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
 6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
 7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
-
-## References
-
-- Wireshark User Guide
-- SANS FOR572 (Network Forensics)
-- Malware Analysis Cookbook
-- MITRE ATT&CK Network Techniques

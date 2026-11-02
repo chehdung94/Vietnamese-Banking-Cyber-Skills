@@ -1,6 +1,6 @@
 ---
 name: collecting-volatile-evidence-from-compromised-host
-description: "Collect volatile evidence from a live compromised Windows host in volatility order per RFC 3227. Use at the start of live-response triage, before the host is powered off or reimaged."
+description: "Collect volatile evidence from a live compromised host in volatility order per RFC 3227, then hash and log it for chain of custody. Use at the start of live-response triage before a host is shut down, isolated or reimaged. Not for offline disk imaging and not for post-hoc analysis of an existing memory dump."
 allowed-tools:
   - Read
   - Grep
@@ -8,15 +8,25 @@ allowed-tools:
   - Bash
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
 domain: cybersecurity
 subdomain: incident-response
+mitre_attack:
+  - T1059.001
+  - T1053.005
+  - T1547.001
+  - T1112
+nist_csf:
+  - DE.CM-9
+  - DE.AE-1
+  - RS.RP-1
+  - RS.MI-1
 tags:
-  - [volatile-evidence
+  - volatile-evidence
   - live-forensics
   - memory-acquisition
   - DFIR
-  - incident-response]
+  - incident-response
 metadata:
   owner: security-skills-team
   tier: 3
@@ -27,215 +37,119 @@ metadata:
 
 ## Overview
 
-Volatile evidence exists only in RAM and is lost upon system shutdown. This skill provides a systematic procedure for collecting volatile evidence in order of volatility (per RFC 3227), ensuring critical artifacts are preserved before containment.
+Bang chung volatile chi ton tai trong RAM va mat ngay khi may tat. Skill nay cung cap quy trinh
+thu thap theo thu tu bien dong (RFC 3227), bao dam artifact quan trong duoc bao ton truoc khi
+buoc kiem soat (containment) va dong may.
+
+> Muc thoi gian phap ly: xem `../_shared/compliance-vietnam.md` (nguon su fact duy nhat).
+> Phan cap P1-P4: xem `../_shared/severity-and-escalation.md`.
 
 ## When to Use
 
-- Responding to an active incident on a running system
-- Containing a compromised endpoint before isolation
-- Preserving memory for later forensics
-- Collecting live forensic evidence
-- Investigating while attacker may still be active
+- Danh ung mot su co dang dien ra tren he thong dang chay.
+- Can bao ton bang chung truoc khi chuyen sang bien phap kiem soat hoac cach ly endpoint.
+- Can giu memory image cho buoc phan tich RAM sau.
+- Dieu tra trong khi ke tu van co the van hoat dong.
+- Thu thap bang chung live-response co chu ky luu tru chuan.
 
-## Order of Volatility (RFC 3227)
-
-| Priority | Evidence | Collection Method |
-|----------|----------|-------------------|
-| 1 | CPU registers, cache | Hardware-level collection |
-| 2 | RAM (Memory) | WinPmem, DumpIt, AVML |
-| 3 | Network connections | netstat, ss, lsof |
-| 4 | Running processes | ps, top, tasklist |
-| 5 | Kernel tables | OS-specific commands |
-| 6 | Disk files (modified) | File system parsing |
-| 7 | Physical disk | Full image acquisition |
+**Khong dung cho skill nay:** chup dia offline (dung phan tinh dia bang KAPE/EZ Tools), phan tich
+mot memory dump da co (dung `../conducting-memory-forensics-with-volatility/SKILL.md`), hoac phan tich
+registry hive (dung `../analyzing-windows-registry-for-artifacts/SKILL.md`).
 
 ## Prerequisites
 
-- Trusted forensic USB toolkit (KAPE, Velociraptor, or Sysinternals)
-- Write-blocker or forensic write protection
-- Storage for evidence (external drive)
-- Network access to system
-- Chain of custody forms
+- Bo cong cu phap y tin cay (KAPE, Velociraptor, hoac Sysinternals) chay tu dia ngoai.
+- Write-blocker hoac co che bao ve ghi read-only cho dia dich.
+- Dia luu tru bang chung (o ngoai) voi du dung chua dung.
+- Cong mang toi may da co (neu thu thap tu xa).
+- Mau bien chain of custody va thong tin case.
+- Memory image neu can: WinPmem, Magnet RAM Capture, DumpIt (Windows) hoac AVML (Linux).
 
-## Steps
+**STOP rule:** Neu thieu mot dieu kien bat buoc o tren, dung tai buoc do, khong phan tich tiep.
+Tra `insufficient_evidence` va liet ke artefact con thieu theo Rules dong 1-2.
+Neu khong co gia de luu bang chung hoac khong co quy trinh chain of custody, dung truoc khi
+cham vao may - thu thap khong co ghi nhan la thu thap khong hop le.
 
-### Step 1: Prepare Evidence Collection
+## Execution Steps
 
-**Create evidence directory:**
-```bash
-EVIDENCE_DIR="C:\Forensics\$(hostname)_$(Get-Date -Format yyyyMMdd_HHmmss)"
-mkdir -p "$EVIDENCE_DIR"
-cd "$EVIDENCE_DIR"
-```
+### Step 1: Chuan bi thu thap
 
-### Step 2: Document System State
+Tao thu muc bang chung tren dia ngoai, gan ten theo hostname va moc thoi gian thu thap.
 
-```bash
-# System info
-hostname > system_info.txt
-ifconfig -a >> system_info.txt 2>/dev/null
-ipconfig /all >> system_info.txt 2>$null # Windows
+### Step 2: Ghi nhan trang thai he thong
 
-# Current user
-whoami > current_user.txt
-query user > logged_in_users.txt 2>$null # Windows
-w > w_output.txt 2>/dev/null # Linux
+Hostname, ngay gio he thong (UTC va gio dia phuong), user dang chay, cau hinh mang. Moc thoi gian
+nay la moc de doi chieu, khong phai moc phap ly.
 
-# System date/time
-date -u > system_time_utc.txt
-wmic os get localdatetime > system_time.txt 2>$null # Windows
-```
+### Step 3: Capture memory
 
-### Step 3: Capture Memory (Most Critical!)
+Chup memory image bang WinPmem/DumpIt (Windows) hoac AVML (Linux). Day la buoc quan trong nhat
+vi RAM mat truoc moi thu thap khac. Thoi gian chup anh huong ke qua phan tich sau.
 
-**Windows:**
-```bash
-# WinPmem
-winpmem_mini_x64.exe memory.raw
+### Step 4: Thu thap ket noi mang
 
-# DumpIt
-DumpIt.exe
-# Creates .raw file in current directory
-```
+`netstat -anob` (Windows) hoac `ss -tunap` (Linux). Giu nguyen ket qua thu thap va luu thoi diem
+lay mau de dung cho phan tich.
 
-**Linux:**
-```bash
-# AVML
-./avml output.lime
+### Step 5: Capture thong tin tien trinh
 
-# LiME
-insmod lime.ko "path=output.lime format=lime"
-```
+Danh sach tien trinh, dong DLL da nang tai (`listdlls`), dong lenh day du. Day la co so de doi chieu
+voi memory image.
 
-### Step 4: Collect Network Connections
+### Step 6: Capture phien dang dang nhap
 
-```bash
-# Windows
-netstat -anob > network_connections.txt
-netstat -ano > netstat_ano.txt
+Cac tai khoan dang dang nhap, phien dang mo, phien mang (`net session`). Ghi nhan user lao bien.
 
-# Linux
-ss -tunap > ss_output.txt
-netstat -tunap > netstat_output.txt
-cat /proc/net/tcp > proc_net_tcp.txt
-```
+### Step 7: Capture cau hinh he thong
 
-### Step 5: Capture Process Information
+Scheduled task, service, Run key. Chi doc va export, khong sua registry.
 
-```bash
-# Windows
-tasklist /v > tasklist.txt
-wmic process list brief > process_list.txt
+### Step 8: Ghi nhan chain of custody
 
-# Linux
-ps auxwwf > ps_output.txt
-cat /proc/*/cmdline 2>/dev/null | tr '\0' ' ' > proc_cmdline.txt
+Tao manifest SHA-256 cho tat ca file da thu thap, ghi lai nguoi thu thap, thoi diem, phuong thuc
+va danh sach file. Ghi ro rang trong bao cao rang viec thu thap tren may dang chay da lam thay doi
+bang chung RAM.
 
-# DLLs loaded
-listdlls.exe -accepteula > loaded_dlls.txt 2>$null # Windows
-```
+Chi tiet command va mau bieu mau: `references/volatile-collection-sop.md`.
 
-### Step 6: Capture User Sessions
+## Expected Output
 
-```bash
-# Windows
-query user > logged_in_users.txt
-query session > active_sessions.txt
-net session > net_sessions.txt 2>&1
-
-# Linux
-who > who_output.txt
-last -50 > last_logins.txt
-```
-
-### Step 7: System Configuration
-
-```bash
-# Scheduled tasks
-schtasks /query /fo CSV /v > scheduled_tasks.csv 2>$null # Windows
-crontab -l > crontab.txt 2>/dev/null # Linux
-
-# Services
-sc queryex type=service state=all > services.txt 2>$null # Windows
-systemctl list-units --type=service --all > services.txt 2>/dev/null # Linux
-
-# Registry autoruns
-reg export "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" autorun_hklm.reg /y 2>$null
-```
-
-### Step 8: Document Chain of Custody
-
-```bash
-# Hash all evidence
-sha256sum * > evidence_manifest.sha256
-
-# Create chain of custody record
-cat > chain_of_custody.txt << EOF
-CHAIN OF CUSTODY RECORD
-========================
-Case ID: IR-YYYY-NNN
-Collection Date: $(date -u)
-Collected By: $(whoami)
-System: $(hostname)
-Collection Method: Live forensic collection
-
-Evidence Items:
-$(ls -la)
-
-SHA256 Manifest: evidence_manifest.sha256
-EOF
-```
-
-## Key Concepts
-
-| Concept | Description |
-|---------|-------------|
-| Order of Volatility | Collect most volatile first |
-| Live Forensics | Evidence from running system |
-| Chain of Custody | Documentation of handling |
-| Forensic Soundness | Not altering evidence |
-| Trusted Tools | From external media |
-| Evidence Integrity | SHA256 hashing |
-
-## Output Format
+1. **Bao cao** (markdown): danh sach bang chung da thu thap kem hash SHA-256, thu tu thu thap theo
+   RFC 3227, moc thoi gian phat hien va moc phap ly theo `../_shared/compliance-vietnam.md`, gioi han
+   cua bang chung live, phan cap P1-P4 theo `../_shared/severity-and-escalation.md`.
+2. **JSON** (mau):
 
 ```json
 {
-  "collection_summary": {
-    "hostname": "WKSTN-042",
-    "collection_date": "YYYY-MM-DD HH:MM:SS",
-    "collector": "analyst-name",
-    "os_version": "Windows 10 21H2"
+  "skill": "collecting-volatile-evidence-from-compromised-host",
+  "status": "ok",
+  "scope": {
+    "hostname": "",
+    "os_version": "",
+    "collection_start_utc": "",
+    "collection_end_utc": ""
   },
-  "evidence_collected": {
-    "memory_image": { "file": "memory.raw", "size": 0, "sha256": "" },
-    "network_connections": { "file": "network_connections.txt" },
-    "process_list": { "file": "process_list.txt" },
-    "user_sessions": { "file": "logged_in_users.txt" },
-    "system_config": { "file": "system_info.txt" }
-  },
-  "chain_of_custody": {
-    "manifest": "evidence_manifest.sha256",
-    "custody_record": "chain_of_custody.txt"
-  },
-  "initial_findings": {
-    "suspicious_connections": [],
-    "unusual_processes": [],
-    "rogue_users": []
-  }
+  "summary": {},
+  "findings": [],
+  "indicators": [],
+  "severity": "P3",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": []
 }
 ```
 
-## Tools Reference
+## References
 
-| Tool | Purpose |
-|------|---------|
-| WinPmem | Windows memory acquisition |
-| AVML | Linux memory acquisition |
-| KAPE | Automated artifact collection |
-| Velociraptor | Remote forensic collection |
-| CyLR | Cross-platform live response |
-| Sysinternals | Process/handle analysis |
+- `references/thresholds.md` - bang thu tu bien dong va tieu chi chat duoc cho buoc ban giao.
+- `references/volatile-collection-sop.md` - command thu thap, khai niem then chot, bang cong cu.
+- `../_shared/mitre-nist-mapping.md` - danh sach ID MITRE ATT&CK v18 va NIST CSF 2.0 duy nhat.
+- `../_shared/severity-and-escalation.md` - thang phan cap P1-P4 va ma leo thang.
+- `../_shared/compliance-vietnam.md` - moc thoi gian phap ly.
+- `../_shared/off-hours-and-baseline.md` - khung gio lam viec khi chuan hoa moc thoi gian.
+- RFC 3227 - Guidelines for Evidence Collection and Archiving.
+- NIST SP 800-61r3 - Incident Handling Recommendations.
+- NIST SP 800-86 - Guide to Integrating Forensic Techniques into Incident Response.
 
 ## Rules (bat buoc)
 
@@ -246,9 +160,3 @@ EOF
 5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
 6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
 7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
-
-## References
-
-- RFC 3227 (Order of Volatility)
-- NIST SP 800-86 (Forensics Integration)
-- SANS DFIR (Live Forensics)
