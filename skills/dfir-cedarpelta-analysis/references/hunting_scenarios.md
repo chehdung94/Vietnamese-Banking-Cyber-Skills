@@ -2,6 +2,9 @@
 
 Each scenario must contain status, evidence checked, evidence missing, supporting evidence, contradictory evidence, confidence, and follow-up actions.
 
+> ID chi lay tu `skills/_shared/mitre-nist-mapping.md` (MITRE ATT&CK v18). Ky thuat khong co
+> ID trong danh muc dung chung duoc mo ta bang chu, khong tu gan ID.
+
 Valid status values:
 
 ```text
@@ -43,7 +46,7 @@ Review:
 
 ATT&CK examples:
 
-- T1003 OS Credential Dumping
+- T1003.001 OS Credential Dumping: LSASS
 - T1078 Valid Accounts
 
 ### 3. Suspicious PowerShell / Script Execution
@@ -61,7 +64,7 @@ Review:
 ATT&CK examples:
 
 - T1059.001 PowerShell
-- T1218 Signed Binary Proxy Execution
+- Signed Binary Proxy Execution (khong co ID trong danh muc dung chung)
 
 ### 4. Malware Execution / Suspicious Binary
 
@@ -78,7 +81,7 @@ Review:
 ATT&CK examples:
 
 - T1204 User Execution
-- T1059 Command and Scripting Interpreter
+- T1059.001 Command and Scripting Interpreter
 
 ### 5. Persistence
 
@@ -93,9 +96,9 @@ Review:
 
 ATT&CK examples:
 
-- T1053 Scheduled Task/Job
-- T1543 Create or Modify System Process
-- T1547 Boot or Logon Autostart Execution
+- T1053.005 Scheduled Task/Job
+- T1547.001 Boot or Logon Autostart Execution: Registry Run Keys
+- Create or Modify System Process (khong co ID trong danh muc dung chung)
 
 ### 6. Lateral Movement
 
@@ -110,8 +113,8 @@ Review:
 
 ATT&CK examples:
 
-- T1021 Remote Services
-- T1570 Lateral Tool Transfer
+- T1021.001 Remote Services: RDP
+- Lateral Tool Transfer (khong co ID trong danh muc dung chung)
 
 ### 7. Data Staging / Exfiltration Preparation
 
@@ -127,7 +130,8 @@ Review:
 ATT&CK examples:
 
 - T1074 Data Staged
-- T1560 Archive Collected Data
+- Archive Collected Data (khong co ID trong danh muc dung chung)
+- T1567.002 Exfiltration to Cloud Storage
 
 ### 8. Defense Evasion
 
@@ -141,8 +145,8 @@ Review:
 
 ATT&CK examples:
 
-- T1070 Indicator Removal
-- T1562 Impair Defenses
+- Indicator Removal (khong co ID trong danh muc dung chung)
+- Impair Defenses (khong co ID trong danh muc dung chung)
 
 ### 9. Reconnaissance
 
@@ -158,8 +162,8 @@ Review:
 
 ATT&CK examples:
 
-- T1087 Account Discovery
-- T1016 System Network Configuration Discovery
+- Account Discovery (khong co ID trong danh muc dung chung)
+- System Network Configuration Discovery (khong co ID trong danh muc dung chung)
 
 ### 10. Suspicious Tools
 

@@ -8,10 +8,10 @@ Use the case-local parser matrix as the source of truth for parser selection:
 cases/<CASE_ID>/shared/parser_recommendation_matrix.json
 ```
 
-Validate the matrix against the bundled schema when the case repository schema is unavailable:
+Validate the matrix against the bundled matrix file when the case repository schema is unavailable:
 
 ```text
-schemas/parser_recommendation_matrix.schema.json
+schemas/parser_recommendation_matrix.json
 ```
 
 A valid parser matrix contains `parser_matrix.<evidence_group>` entries with:
