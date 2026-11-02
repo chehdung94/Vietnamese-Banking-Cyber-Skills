@@ -146,14 +146,14 @@ Vietnamese-Banking-Cyber-Skills/
 
 | Skill | Description | MITRE ATT&CK |
 |-------|-------------|--------------|
-| [`playbook-master-incident-triage`](skills/playbook-master-incident-triage/SKILL.md) | Entry point - phân loại và định hướng sự cố theo P1-P4 | Triage |
+| [`playbook-master-incident-triage`](skills/playbook-master-incident-triage/SKILL.md) | Entry point - phân loại và định hướng sự cố theo P1-P4 | T1048, T1567.002, T1074, T1114, T1530, T1110, T1078, T1021.001, T1071, T1098, T1204, T1486 |
 
 ### Tier 2: Incident Playbooks
 
 | Skill | Description | MITRE ATT&CK |
 |-------|-------------|--------------|
-| [`playbook-phishing-response`](skills/playbook-phishing-response/SKILL.md) | Xử lý email lừa đảo, credential harvesting | T1566 |
-| [`playbook-abnormal-user-behavior-response`](skills/playbook-abnormal-user-behavior-response/SKILL.md) | Phản ứng hành vi bất thường UEBA, insider threat | T1074, T1114 |
+| [`playbook-phishing-response`](skills/playbook-phishing-response/SKILL.md) | Xử lý email lừa đảo, credential harvesting | T1204, T1110, T1078, T1048, T1567.002 |
+| [`playbook-abnormal-user-behavior-response`](skills/playbook-abnormal-user-behavior-response/SKILL.md) | Phản ứng hành vi bất thường UEBA, insider threat | T1074, T1114, T1098, T1526, T1048, T1530, T1115 |
 | *(Xem draft)* | Data Leak Response | T1048, T1074 |
 | *(Đang phát triển)* | Malware/Ransomware Response | T1486 |
 | *(Đang phát triển)* | Account Takeover Response | T1078 |
@@ -162,16 +162,16 @@ Vietnamese-Banking-Cyber-Skills/
 
 | Skill | Description | MITRE ATT&CK |
 |-------|-------------|--------------|
-| [`conducting-memory-forensics-with-volatility`](skills/conducting-memory-forensics-with-volatility/SKILL.md) | Phân tích memory dump với Volatility 3 | T1055 |
-| [`performing-network-forensics-with-wireshark`](skills/performing-network-forensics-with-wireshark/SKILL.md) | Phân tích PCAP files | T1040 |
-| [`analyzing-ueba-alerts-varonis`](skills/analyzing-ueba-alerts-varonis/SKILL.md) | Phân tích UEBA alerts từ Varonis | T1074 |
-| [`analyzing-windows-registry-for-artifacts`](skills/analyzing-windows-registry-for-artifacts/SKILL.md) | Trích xuất artifacts từ Windows Registry | T1012 |
-| [`collecting-volatile-evidence-from-compromised-host`](skills/collecting-volatile-evidence-from-compromised-host/SKILL.md) | Thu thập volatile evidence theo RFC 3227 | T1054 |
-| [`performing-windows-artifact-analysis-with-eric-zimmerman-tools`](skills/performing-windows-artifact-analysis-with-eric-zimmerman-tools/SKILL.md) | Windows forensics với KAPE, MFTECmd | T1005 |
-| [`analyzing-dlp-alerts`](skills/analyzing-dlp-alerts/SKILL.md) | Phân tích DLP alerts (Purview, Varonis) | T1048, T1074 |
-| [`analyzing-azure-ad-signin-logs`](skills/analyzing-azure-ad-signin-logs/SKILL.md) | Phân tích Azure AD sign-in logs | T1078, T1110 |
-| [`analyzing-email-audit-logs`](skills/analyzing-email-audit-logs/SKILL.md) | Phân tích email audit logs (Exchange, M365) | T1114, T1566 |
-| [`analyzing-cloud-storage-audit-logs`](skills/analyzing-cloud-storage-audit-logs/SKILL.md) | Phân tích cloud storage logs (OneDrive, S3) | T1048, T1074 |
+| [`conducting-memory-forensics-with-volatility`](skills/conducting-memory-forensics-with-volatility/SKILL.md) | Phân tích memory dump với Volatility 3 | T1003.001, T1071, T1021.001, T1112 |
+| [`performing-network-forensics-with-wireshark`](skills/performing-network-forensics-with-wireshark/SKILL.md) | Phân tích PCAP files | T1071, T1048, T1021.001, T1110 |
+| [`analyzing-ueba-alerts-varonis`](skills/analyzing-ueba-alerts-varonis/SKILL.md) | Phân tích UEBA alerts từ Varonis | T1074, T1114, T1110, T1222, T1048, T1204 |
+| [`analyzing-windows-registry-for-artifacts`](skills/analyzing-windows-registry-for-artifacts/SKILL.md) | Trích xuất artifacts từ Windows Registry | T1112, T1547.001, T1059.001, T1003.001, T1021.001 |
+| [`collecting-volatile-evidence-from-compromised-host`](skills/collecting-volatile-evidence-from-compromised-host/SKILL.md) | Thu thập volatile evidence theo RFC 3227 | T1059.001, T1053.005, T1547.001, T1112 |
+| [`performing-windows-artifact-analysis-with-eric-zimmerman-tools`](skills/performing-windows-artifact-analysis-with-eric-zimmerman-tools/SKILL.md) | Windows forensics với KAPE, MFTECmd | T1112, T1547.001, T1053.005, T1059.001, T1003.001 |
+| [`analyzing-dlp-alerts`](skills/analyzing-dlp-alerts/SKILL.md) | Phân tích DLP alerts (Purview, Varonis) | T1048, T1074, T1567.002, T1115 |
+| [`analyzing-azure-ad-signin-logs`](skills/analyzing-azure-ad-signin-logs/SKILL.md) | Phân tích Azure AD sign-in logs | T1078, T1110, T1098 |
+| [`analyzing-email-audit-logs`](skills/analyzing-email-audit-logs/SKILL.md) | Phân tích email audit logs (Exchange, M365) | T1114, T1048, T1078 |
+| [`analyzing-cloud-storage-audit-logs`](skills/analyzing-cloud-storage-audit-logs/SKILL.md) | Phân tích cloud storage logs (OneDrive, S3) | T1530, T1567.002, T1074, T1078 |
 
 ---
 
@@ -311,7 +311,7 @@ vol -f mem.dmp windows.netscan.Netscan
 vol -f mem.dmp windows.malfind.Malfind
 
 ### Findings
-⚠️ **Suspicious Process Detected:** update.exe (PID: 4532, Parent: notepad.exe) - MITRE ATT&CK: T1055
+⚠️ **Suspicious Process Detected:** update.exe (PID: 4532, Parent: notepad.exe) - MITRE ATT&CK: T1003.001
 
 ```
 ---
@@ -427,7 +427,7 @@ tags: [phishing, email, analysis]
 version: "1.0"
 author: Your Name
 license: Apache-2.0
-mitre_attack: T1566
+mitre_attack: [T1204, T1110]
 prerequisites:
   - Python 3.8+
   - Tool name
