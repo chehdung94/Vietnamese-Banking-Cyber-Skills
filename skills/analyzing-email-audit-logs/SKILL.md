@@ -383,7 +383,7 @@ Get-InboxRule -Mailbox "huyhq@domain.com" |
 ---
 
 ## Related Playbooks
-- [`playbook-data-leak-response`](../drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
+- [`playbook-data-leak-response`](../../drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
 - [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Insider threat investigation
 - [`playbook-phishing-response`](../playbook-phishing-response/SKILL.md) - Phishing investigation
 

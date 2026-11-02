@@ -322,7 +322,7 @@ $recent | Where-Object { $baseline -notcontains $_.Location }
 ## Related Playbooks
 - [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Full behavioral investigation
 - [`playbook-phishing-response`](../playbook-phishing-response/SKILL.md) - Post-phishing account check
-- [`playbook-data-leak-response`](../drafts/playbook-data-leak-response/SKILL.md) - Initial access investigation
+- [`playbook-data-leak-response`](../../drafts/playbook-data-leak-response/SKILL.md) - Initial access investigation
 
 ## Rules (bat buoc)
 

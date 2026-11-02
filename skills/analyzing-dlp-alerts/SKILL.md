@@ -279,7 +279,7 @@ Set-SPOTenant -DisablePersonalFeatures $true
 ---
 
 ## Related Playbooks
-- [`playbook-data-leak-response`](../drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
+- [`playbook-data-leak-response`](../../drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
 - [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Insider threat investigation
 - [`analyzing-ueba-alerts-varonis`](../analyzing-ueba-alerts-varonis/SKILL.md) - UEBA correlation
 
