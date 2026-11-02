@@ -1,6 +1,6 @@
 ---
 name: analyzing-windows-registry-for-artifacts
-description: "Extract and triage Windows registry artifacts such as Run keys, services, UserAssist, and persistence from forensic hive images. Use when SOFTWARE.hiv or ntuser.hiv images, or an exported registry, are provided."
+description: "Extract and triage Windows registry artifacts (Run keys, services, UserAssist, persistence, user activity) from forensic hive images. Use when SYSTEM, SOFTWARE, SAM, SECURITY, NTUSER.DAT or USRCLASS.DAT hives, or registry exports, are provided for a DFIR case. Not for live volatile collection on a running host and not for memory forensics."
 allowed-tools:
   - Read
   - Grep
@@ -8,16 +8,27 @@ allowed-tools:
   - Bash
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
 domain: cybersecurity
 subdomain: digital-forensics
+mitre_attack:
+  - T1112
+  - T1547.001
+  - T1059.001
+  - T1003.001
+  - T1021.001
+nist_csf:
+  - DE.CM-9
+  - DE.AE-1
+  - DE.AE-3
+  - RS.RP-1
 tags:
-  - [windows-registry
+  - windows-registry
   - registry-hives
   - forensics
   - autostart
   - user-activity
-  - DFIR]
+  - DFIR
 metadata:
   owner: security-skills-team
   tier: 3
@@ -28,106 +39,119 @@ metadata:
 
 ## Overview
 
-The Windows Registry contains critical forensic artifacts including user activity, application execution, system configuration, and evidence of compromise. This skill covers extraction and analysis of key registry hives for incident response and forensic investigations.
+Windows Registry chua nhieu tang chung minh ve hanh dong nguoi dung, cau hinh he thong va co che
+gia dau (persistence). Skill nay trich xuat va phan tich cac hive registry de ho tro dieu tra,
+phat hien persistence va dung timeline hanh dong.
+
+> Muc thoi gian phap ly: xem `../_shared/compliance-vietnam.md` (nguon su fact duy nhat).
+> Phan cap P1-P4: xem `../_shared/severity-and-escalation.md`.
 
 ## When to Use
 
-- Investigating user activity on a compromised system
-- Identifying persistence mechanisms (autoruns)
-- Recovering deleted or damaged evidence
-- Building timelines of user actions
-- Detecting credential theft or privilege escalation
+- Dieu tra hoat dong nguoi dung tren may bi xam nhap.
+- Xac nhan co che persistence (Run key, Service, Winlogon, AppInit, IFEO).
+- Khoi phuc bang chung da bi xoa hoac hong tren dia.
+- Xay dung timeline hanh dong nguoi dung.
+- Phat hien dau hieu credential theft hoac escalation dac quyen.
+
+**Khong dung cho skill nay:** thu thap volatile tren host dang chay (dung
+`../collecting-volatile-evidence-from-compromised-host/SKILL.md`), phan tich file Windows tren dia
+bang KAPE/EZ Tools (dung `../performing-windows-artifact-analysis-with-eric-zimmerman-tools/SKILL.md`),
+hoac phan tich RAM (dung `../conducting-memory-forensics-with-volatility/SKILL.md`).
 
 ## Prerequisites
 
-- Registry hives: SYSTEM, SOFTWARE, SAM, SECURITY, NTUSER.DAT, USRCLASS.DAT
-- Tools: Registry Viewer, FTK Imager, or regedit export
-- Timeline context (incident window)
+- Hive registry can phan tich: `SYSTEM`, `SOFTWARE`, `SAM`, `SECURITY`, `NTUSER.DAT`, `USRCLASS.DAT`.
+- Cong cu doc hive: Registry Viewer, RegRipper, hoac `python-registry`; phai giu nguyen nguyen ban goc.
+- Ban do cac duong dan registry can phan tich: `references/registry-artifact-locations.md`.
+- Pham vi su co va moc thoi gian lien quan (tham chieu `../_shared/off-hours-and-baseline.md` khi chuan hoa
+  moc thoi gian).
+- Hash SHA-256 cua tung file hive de dinh danh bang chung.
 
-## Key Registry Locations
+**STOP rule:** Neu thieu mot dieu kien bat buoc o tren, dung tai buoc do, khong phan tich tiep.
+Tra `insufficient_evidence` va liet ke artefact con thieu theo Rules dong 1-2.
+Neu thieu hash cua hive hoac khong xac dinh duoc hive nao thuoc case, dung truoc khi trich xuat.
 
-### User Activity
-| Hive | Path | Artifacts |
-|------|------|-----------|
-| NTUSER.DAT | HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer | RecentApps, RunMRU |
-| NTUSER.DAT | HKCU\Software\Microsoft\Office\*\*\UserMRU | Recent documents |
-| USRCLASS.DAT | Local Settings\Software\Microsoft\Windows\Shell | BagMRU |
+## Execution Steps
 
-### Persistence Mechanisms
-| Hive | Path | Purpose |
-|------|------|---------|
-| NTUSER.DAT | HKCU\Software\Microsoft\Windows\CurrentVersion\Run | User autorun |
-| SYSTEM | HKLM\SYSTEM\CurrentControlSet\Services | Service entries |
-| SOFTWARE | HKLM\Software\Microsoft\Windows\CurrentVersion\Run | System autorun |
+### Step 1: Chot danh tinh bang chung
 
-### System Information
-| Hive | Path | Artifacts |
-|------|------|-----------|
-| SYSTEM | HKLM\SYSTEM\CurrentControlSet\Control\TimeZoneInformation | Timezone |
-| SOFTWARE | HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion | OS Version |
-| SAM | HKLM\SAM\SAM\Domains | User accounts |
+Ghi lai ten file, kich thuoc, hash SHA-256 va nguon cua tung hive. Ghi lai phien ban Windows va
+timezone he thong tu hive `SYSTEM` de chuan hoa moc thoi gian su co.
 
-## Steps
+### Step 2: Parse hive va trich xuat khoa
 
-### Step 1: Collect Registry Hives
+Dung cong cu doc hive de lay gia tri cac duong dan trong `references/registry-artifact-locations.md`.
+Chi doc, khong ghi lai vao file hive goc.
 
-```bash
-# Using FTK Imager
-ftkimager.exe --acquire C: C:\Forensics\registry_images
+### Step 3: Xac dinh persistence
 
-# Using regedit export
-reg export HKLM\SOFTWARE C:\Forensics\SOFTWARE.hiv /y
-reg export HKCU\NTUSER.DAT C:\Forensics\ntuser.hiv /y
-```
+Kiem tra Run/RunOnce, Services, Winlogon, AppInit_DLLs va IFEO theo bang dieu kien phat hien tai
+`references/thresholds.md`. Moi muc dang ngo phai doi chieu duong dan tai co that, hash file, log EDR
+truoc khi ket luan. Doi muc phan loai: T1547.001 cho Run key, T1112 cho
+thay doi registry, T1059.001 khi khoa tro toi shell/cmd.
 
-### Step 2: Parse with Registry Viewer
+### Step 4: Phan tich hoat dong nguoi dung
 
-```bash
-# Parse and extract specific keys
-python regparse.py --hive SOFTWARE.hiv --keys "Microsoft\Windows\CurrentVersion\Run"
-```
+Doc UserAssist, RunMRU, RecentApps, ShimCache, BAM/DAM va Office UserMRU de dung chay chuong trinh
+va tep gan nhat theo user. UserAssist luu gia tri ROT13.
 
-### Step 3: Identify Autostart Entries
+### Step 5: Trich xuat thong tin he thong
 
-```bash
-# Check all autorun locations
-python autoruns_parser.py --hives "NTUSER.DAT,SYSTEM,SOFTWARE"
-```
+Lay OS build, install time, danh sach tai khoan tu `SAM` (khong dich hash SAM thanh mat khau),
+cau hinh RDP va timezone. Chuyen tiep can qua RDP duoc gan voi T1021.001.
 
-### Step 4: Analyze User Activity
+### Step 6: Lien ket va phan cap
 
-```bash
-# Extract recent documents and applications
-python user_activity.py --hive NTUSER.DAT.hiv
-```
+Ghep mo dong thoi gian voi log tai khoan, EDR va log mang. Phan cap theo
+`../_shared/severity-and-escalation.md`, chi de xuat hanh dong khac phuc (Rules dong 6).
 
-## Output Format
+Chi tiet command va quy trinh phan tich: `references/registry-analysis-sop.md`.
+
+## Expected Output
+
+1. **Bao cao** (markdown): tom tat, bang chi tiet khoa registry, phan cap P1-P4, danh sach IOC,
+   hanh dong de xuat, muc hien chong. Mau: `references/registry-report-example.md`.
+2. **JSON** (mau):
 
 ```json
 {
-  "registry_analysis": {
+  "skill": "analyzing-windows-registry-for-artifacts",
+  "status": "ok",
+  "scope": {
     "hives_analyzed": [],
-    "autostart_entries": [],
-    "user_activity": [],
-    "system_info": {}
+    "os_version": "",
+    "timezone": ""
   },
-  "findings": {
-    "persistence_mechanisms": [],
-    "suspicious_entries": [],
-    "user_timeline": []
-  },
-  "ioc_list": []
+  "summary": {},
+  "findings": [
+    {
+      "artifact": "",
+      "value": "",
+      "assessment": "",
+      "evidence": "",
+      "hypothesis": ""
+    }
+  ],
+  "indicators": [],
+  "severity": "P3",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": []
 }
 ```
 
-## Key MITRE ATT&CK Mappings
+## References
 
-| Registry Location | ATT&CK Technique |
-|-----------------|------------------|
-| HKCU\Run | T1547.001 (Boot/Logon Autostart Execution) |
-| HKLM\Services | T1543.003 (Create/Modify System Process) |
-| HKCU\Environment | T1112 (Modify Registry) |
-| UserAssist | T1112 (Modify Registry) |
+- `references/thresholds.md` - bang dieu kien phat hien persistence va hoat dong nguoi dung.
+- `references/registry-artifact-locations.md` - bang duong dan registry va ban do MITRE ATT&CK.
+- `references/registry-analysis-sop.md` - command thu thap, phan tich va lien ket bang chung.
+- `references/registry-report-example.md` - mau bao cao markdown.
+- `../_shared/mitre-nist-mapping.md` - danh sach ID MITRE ATT&CK v18 va NIST CSF 2.0 duy nhat.
+- `../_shared/severity-and-escalation.md` - thang phan cap P1-P4 va ma leo thang.
+- `../_shared/compliance-vietnam.md` - moc thoi gian phap ly.
+- Registry Decoder: https://github.com/keydet89/RegRipper3
+- Windows Registry Forensics: SANS DFIR
 
 ## Rules (bat buoc)
 
@@ -138,9 +162,3 @@ python user_activity.py --hive NTUSER.DAT.hiv
 5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
 6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
 7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
-
-## References
-
-- Registry Decoder: https://github.com/keydet89/RegRipper3
-- Windows Registry Forensics: SANS DFIR
-- MITRE ATT&CK: T1547 (Boot/Logon Autostart Execution)

@@ -1,6 +1,6 @@
 ---
 name: performing-windows-artifact-analysis-with-eric-zimmerman-tools
-description: "Run KAPE and Eric Zimmerman tools to collect and triage Windows artifacts, then build a normalized timeline. Use when a live or disk Windows artifact set must be parsed into events."
+description: "Run KAPE and Eric Zimmerman tools (PECmd, MFTECmd, LECmd, JLECmd) to collect and triage Windows artifacts, then build a normalized timeline. Use when a live Windows host or a Windows artifact set (prefetch, LNK, jump lists, MFT, registry hives) must be parsed into events. Not for memory analysis and not for network capture analysis."
 allowed-tools:
   - Read
   - Grep
@@ -8,16 +8,27 @@ allowed-tools:
   - Bash
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
 domain: cybersecurity
 subdomain: digital-forensics
+mitre_attack:
+  - T1112
+  - T1547.001
+  - T1053.005
+  - T1059.001
+  - T1003.001
+nist_csf:
+  - DE.CM-9
+  - DE.AE-1
+  - DE.AE-3
+  - RS.RP-1
 tags:
-  - [windows-forensics
+  - windows-forensics
   - eric-zimmerman
   - registry
   - prefetch
   - artifact-analysis
-  - DFIR]
+  - DFIR
 metadata:
   owner: security-skills-team
   tier: 3
@@ -28,104 +39,116 @@ metadata:
 
 ## Overview
 
-Eric Zimmerman's EZ Tools suite provides powerful command-line utilities for parsing Windows forensic artifacts. This skill covers KAPE (artifact collector), MFTECmd (MFT parser), PECmd (Prefetch), LECmd (Lnk files), JLECmd (Jump Lists), and Timeline Explorer for comprehensive Windows forensics.
+Bo cong cu Eric Zimmerman (EZ Tools) cung cap tien ich command-line de parse artifact Windows:
+KAPE (thu thap), MFTECmd (MFT), PECmd (Prefetch), LECmd (LNK), JLECmd (Jump List) va Timeline
+Explorer (gop su kien). Skill nay bao quat quy trinh thu thap, parse va gom timeline chuan hoa.
+
+> Muc thoi gian phap ly: xem `../_shared/compliance-vietnam.md` (nguon su fact duy nhat).
+> Phan cap P1-P4: xem `../_shared/severity-and-escalation.md`.
 
 ## When to Use
 
-- Analyzing registry hives for user activity and system configuration
-- Parsing prefetch files to identify application execution history
-- Examining LNK files for recent document access
-- Creating forensic timelines from multiple artifact sources
-- Automated artifact collection with KAPE
+- Phan tich registry hive de tim hoat dong nguoi dung va cau hinh he thong.
+- Parse prefetch de xac dinh lich su chay ung dung.
+- Xem LNK va Jump List de truy vei tep nguoi dung vua mo.
+- Tao timeline forensics tu nhieu nguon artifact.
+- Thu thap artifact Windows tu dong bang KAPE.
+
+**Khong dung cho skill nay:** phan tich RAM (dung `../conducting-memory-forensics-with-volatility/SKILL.md`),
+phan tich capture mang (dung `../performing-network-forensics-with-wireshark/SKILL.md`), phan tich
+registry chuyen sau (dung `../analyzing-windows-registry-for-artifacts/SKILL.md`), hoac thu thap
+volatile tren host dang chay (dung `../collecting-volatile-evidence-from-compromised-host/SKILL.md`).
 
 ## Prerequisites
 
-- EZ Tools suite downloaded from Eric Zimmerman's GitHub
-- Windows registry hives (SYSTEM, SOFTWARE, NTUSER.DAT, SAM)
-- Prefetch files from C:\Windows\Prefetch
-- LNK files from Recent folder
-- Jump list files from AppData
+- Bo EZ Tools tai tu kho Eric Zimmerman, kem ban ghi chung.
+- Tap artifact Windows: registry hives (SYSTEM, SOFTWARE, NTUSER.DAT, SAM), prefetch, LNK, Jump Lists.
+- Target va `--tdest` cho KAPE (dia ngoai, dung chua).
+- Timeline Explorer de gop su kien.
+- Moc thoi gian su co de khoang loc timeline (tham chieu `../_shared/off-hours-and-baseline.md`).
 
-## Tools Overview
+**STOP rule:** Neu thieu mot dieu kien bat buoc o tren, dung tai buoc do, khong phan tich tiep.
+Tra `insufficient_evidence` va liet ke artefact con thieu theo Rules dong 1-2.
+Neu khong co tap artifact (khong co target nao de thu thap), dung - khong tao timeline rong.
 
-| Tool | Purpose | Key Output |
-|------|---------|------------|
-| KAPE | Automated artifact collection | Parsed CSV/JSON |
-| MFTECmd | Parse MFT files | Timeline, file details |
-| PECmd | Parse Prefetch files | Execution history |
-| LECmd | Parse LNK files | Access timestamps |
-| JLECmd | Parse Jump Lists | Recent documents |
-| Timeline Explorer | Visual timeline analysis | Correlated events |
+## Execution Steps
 
-## Steps
+### Step 1: Thu thap bang KAPE
 
-### Step 1: KAPE - Automated Collection
+Chay `--tlist` de ghi nhan danh sach target thuc te, roi thu thap theo target trong pham vi
+(phe, tai khoan, file system, event log). Luu output `--tlist` kem bao cao de chung minh pham vi.
 
-```bash
-# List available targets
-.\KAPE.exe --tlist
+### Step 2: Parse Prefetch (PECmd)
 
-# Collect from target
-.\KAPE.exe --tsource C: --tdest C:\KAPE\Output --tflush
-```
+Parse file prefetch de lay lich su chay ung dung. Luu y prefetch chi cho so lan chay va moc thoi
+gian gan nhat, khong cho biet lan chay dau tien. Ap dung dieu kien phat hien tai
+`references/thresholds.md`.
 
-### Step 2: Parse Prefetch with PECmd
+### Step 3: Parse MFT (MFTECmd)
 
-```bash
-PECmd.exe -f C:\Windows\Prefetch\APP.EXE-*.pf --json C:\Output\
-```
+Parse `$MFT` de lay danh sach file, thoi gian tao/sua va kich thuoc. Dung de tim file bi xoa
+hoac bien doi ngoai doi so voi duong dan mong doi.
 
-### Step 3: Parse Registry with MFTECmd
+### Step 4: Parse LNK (LECmd)
 
-```bash
-MFTECmd.exe -f C:\$MFT --csv C:\Output\
-```
+Parse LNK trong thu muc Recent de truy vei tep nguoi dung vua mo theo user.
 
-### Step 4: Parse LNK Files with LECmd
+### Step 5: Parse Jump List (JLECmd)
 
-```bash
-LECmd.exe -d C:\Users\*\AppData\Roaming\Microsoft\Windows\Recent --json C:\Output\
-```
+Parse Jump Lists de bo sung danh sach tep va ung dung gan nhat theo user.
 
-### Step 5: Parse Jump Lists with JLECmd
+### Step 6: Gom timeline va phan cap
 
-```bash
-JLECmd.exe -d C:\Users\*\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations --json C:\Output\
-```
+Dung Timeline Explorer gom cac su kien, chuan hoa moc thoi gian, roi phan cap theo
+`../_shared/severity-and-escalation.md`. Chi de xuat hanh dong khac phuc (Rules dong 6).
 
-## Output Format
+Chi tiet command va quy tac: `references/ez-tools-sop.md`.
+
+## Expected Output
+
+1. **Bao cao** (markdown): pham vi thu thap (kem output `--tlist`), ket qua parse tung loai artifact,
+   timeline chuan hoa, phan cap P1-P4, danh sach IOC, hanh dong de xuat, gioi han phan tich.
+2. **JSON** (mau):
 
 ```json
 {
-  "prefetch_analysis": {
-    "files_processed": 0,
-    "execution_history": []
+  "skill": "performing-windows-artifact-analysis-with-eric-zimmerman-tools",
+  "status": "ok",
+  "scope": {
+    "collection_targets": [],
+    "artifacts_parsed": [],
+    "users_covered": []
   },
-  "registry_findings": {
-    "user_activity": [],
-    "autostart_entries": [],
-    "usb_devices": []
-  },
-  "lnk_files": {
-    "total": 0,
-    "recent_documents": []
-  },
-  "timeline": {
-    "events": [],
-    "correlations": []
-  }
+  "summary": {},
+  "findings": [
+    {
+      "artifact": "",
+      "source_tool": "",
+      "assessment": "",
+      "evidence": "",
+      "hypothesis": ""
+    }
+  ],
+  "indicators": [],
+  "severity": "P3",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": []
 }
 ```
 
-## Key Artifacts for Banking Investigations
+## References
 
-| Artifact | Location | Investigation Value |
-|----------|----------|-------------------|
-| Recent Docs | NTUSER.DAT | File access history |
-| UserAssist | Registry | Program execution |
-| BAM/DAM | SYSTEM | Background activity |
-| Prefetch | Prefetch folder | Application usage |
-| ShimCache | SYSTEM | Program execution |
+- `references/thresholds.md` - bang dieu kien phat hien theo loai artifact.
+- `references/artifact-location-map.md` - bang cong cu, artifact cho dieu tra ngan hang, ban do MITRE.
+- `references/ez-tools-sop.md` - command KAPE/EZ Tools theo buoc va quy tac phan tich.
+- `../_shared/mitre-nist-mapping.md` - danh sach ID MITRE ATT&CK v18 va NIST CSF 2.0 duy nhat.
+- `../_shared/severity-and-escalation.md` - thang phan cap P1-P4 va ma leo thang.
+- `../_shared/compliance-vietnam.md` - moc thoi gian phap ly.
+- `../_shared/off-hours-and-baseline.md` - chuan hoa moc thoi gian.
+- Eric Zimmerman's Tools: https://github.com/EricZimmerman
+- KAPE Documentation: https://www.kape.dev/
+- Timeline Explorer: https://github.com/EricZimmerman/TimelineExplorer
 
 ## Rules (bat buoc)
 
@@ -136,9 +159,3 @@ JLECmd.exe -d C:\Users\*\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDesti
 5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
 6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
 7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
-
-## References
-
-- Eric Zimmerman's Tools: https://github.com/EricZimmerman
-- KAPE Documentation: https://www.kape.dev/
-- Timeline Explorer: https://github.com/EricZimmerman/TimelineExplorer
