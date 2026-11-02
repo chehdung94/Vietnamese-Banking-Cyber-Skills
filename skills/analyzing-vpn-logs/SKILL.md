@@ -58,7 +58,7 @@ Ngưỡng phát hiện, SOP chi tiết và mẫu báo cáo nằm ở `references
 
 ### Step 0 - Kiểm tra phạm vi
 
-Trả lời 5 câu hỏi đánh giá phạm vi trong `references/scope-assessment.md`. Nếu phần lớn câu trả lời là "không", ghi rõ lý do và phạm vi thực tế có thể phân tích, không tự bỏ qua case.
+Trả lời 5 câu hỏi đánh giá phạm vi trong `references/scope-assessment.md`. Nếu 2/5 câu trả lời là "không" -> cân nhắc SKIP và ghi rõ lý do; nếu vẫn phân tích được thì ghi rõ phạm vi phân tích được.
 
 ### Step 1 - Tìm và xác thực nguồn log
 

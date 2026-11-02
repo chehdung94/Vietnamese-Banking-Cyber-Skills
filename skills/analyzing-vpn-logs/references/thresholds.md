@@ -29,6 +29,16 @@ luôn lấy từ `../../_shared/severity-and-escalation.md`.
 
 Nguồn: SKILL.md v2.0 (Step 6.3, bảng Risk Assessment).
 
+## Đánh giá phạm vi (Value Assessment)
+
+| Điều kiện | Ngưỡng | Mức nghi nghi | Hành động | Nguồn |
+|---|---|---|---|---|
+| Trả lời "Không" ở Value Assessment | >= 2/5 câu hỏi | Medium | Cân nhắc SKIP phân tích VPN; ghi rõ lý do và path nguồn log. Nếu vẫn phân tích được thì ghi rõ phạm vi thực tế đã phân tích | SKILL.md v2.0 (Pre-Analysis Value Assessment) |
+
+Dòng này là quyết định quy trình, **KHÔNG phải** mức P1-P4. "Cân nhắc SKIP" nghĩa là đánh giá
+rồi quyết định, không phải bỏ qua case ngay lập tức. Câu hỏi và nghĩa của từng câu trả lời:
+`scope-assessment.md`.
+
 ## Ghi chú calibration
 
 - Ngưỡng kế thừa nguyên trạng từ SKILL.md v2.0; bản gốc chưa có tập nhãn đủ lớn để hiệu chỉnh độc lập.
