@@ -1,0 +1,118 @@
+{
+  "contract_version": "2.1",
+  "skill": "analyzing-ueba-alerts-varonis",
+  "model": "jev-1.13.0",
+  "calibrated": false,
+  "threshold_note": "calibrated=false -> Jev CHI xep hang (rank) cac profile theo thu tu uu tien, KHONG nang muc do phan cap. Muc do phan cap P1-P4 chi lay tu ../_shared/severity-and-escalation.md va bang nguong cua skill tai references/thresholds.md. Jev khong duoc dung de ha muc hoac nang muc cua quy dinh phap ly. Moi nguong so chua co bang chong minh deu de null kem ly do o truong thresholds.",
+  "thresholds": {
+    "mail_exfil_critical": null,
+    "confidence_min": null,
+    "score_now": null,
+    "score_review": null,
+    "noul_review": null,
+    "_reason": "Chua co bang chung hieu chinh cho bo dem toi trong repo nay. Mau mau tham khao tai D:\\AI\\Varonis Daily Logs\\Monitoring\\jev_contract.json la contract rieng cho bo dem Varonis Daily Logs, khong duoc suy dung nguong sang skill nay. Neu can tai su dung, phai ghi ro nguon, so mau hieu chinh va ly do trong truong nay truoc khi dung."
+  },
+  "display": {
+    "auth_live": "Dang nhap con dang dung",
+    "off_hours_human": "Ngoai gio la do nguoi",
+    "mail_exfil": "Thu dua ra hop ca nhan",
+    "file_staging": "Doc hoac xoa nhieu file",
+    "same_window_chain": "Nhieu loai viec cung xuat hien trong ky log",
+    "don_du_lieu": "Don du lieu",
+    "nguoi_thao_tac": "Nguoi dang thao tac",
+    "dong_bo": "Giong dong bo",
+    "dang_nhap_cu": "Dang nhap cu",
+    "binh_thuong": "Binh thuong",
+    "dieu_tra": "Dieu tra them",
+    "lam_ro": "Can lam ro",
+    "khong": "Khong can dieu tra them"
+  },
+  "profile_fields": [
+    "user",
+    "dept",
+    "title",
+    "alert_types",
+    "alert_count",
+    "high_risk_alerts",
+    "risk_score",
+    "rule_level",
+    "rule_alerts",
+    "off_hours_alerts",
+    "sensitive_asset_alerts",
+    "file_events",
+    "file_deleted",
+    "mail_events",
+    "mail_external",
+    "new_locations",
+    "new_devices",
+    "volume_trend",
+    "job_function_assets"
+  ],
+  "questions": {
+    "auth_live": {
+      "type": "noul",
+      "instructions": "Do the authentication counts show a live person signing in, rather than only stale failures on an already-disabled account?",
+      "criteria": {
+        "yes": "co bang chung dang nhap thanh cong moi cho tai khoan dang hoat dong, va cac su kien co nguoi thao tac",
+        "no": "chi co dang nhap that bai lai tren mot tai khoan da bi vo hieu hoa, khong co hoat dong moi",
+        "unknown": "thieu log dang nhap hoac thieu thoi diem vo hieu hoa tai khoan de ket luan"
+      }
+    },
+    "off_hours_human": {
+      "type": "noul",
+      "instructions": "Do the off-hours counts look like a person acting, rather than directory sync or an unattended service?",
+      "criteria": {
+        "yes": "co hoat dong ngoai gio co dau hieu nguoi thao tac va khong giai thich duoc bang dong bo",
+        "no": "khong co hoat dong ngoai gio, hoac chi co dong bo thu muc / dich vu khong can nguoi",
+        "unknown": "khong co du lieu gio lam viec, danh sach phep lam viec ngoai gio, hoac khong phan biet duoc dong bo"
+      }
+    },
+    "mail_exfil": {
+      "type": "noul",
+      "instructions": "Do the external-mail counts and file names look like customer or bank documents sent to a personal mailbox?",
+      "criteria": {
+        "yes": "co thu gui ra ngoai den dia chi ca nhan kem tep dinh kem co ten file lien quan khach hang",
+        "no": "khong co thu ra ngoai dang ngo, hoac chi co gui noi bo theo quy trinh",
+        "unknown": "khong co du lieu nhan tho, khong co danh sach dia chi ca nhan, hoac khong xem duoc ten file dinh kem"
+      }
+    },
+    "file_staging": {
+      "type": "noul",
+      "instructions": "Do the file counts look like bulk copy or deletion of work files?",
+      "criteria": {
+        "yes": "so luong file doc hoac xoa lớn so voi baseline cua nguoi dung va nam trong mot khoang thoi gian ngan",
+        "no": "khong vuot baseline, hoac chi la truy cap thuong ngay",
+        "unknown": "khong co baseline cua nguoi dung de so sanh"
+      }
+    },
+    "same_window_chain": {
+      "type": "noul",
+      "instructions": "Do authentication, mail, and file signals pile up together in this window, rather than one isolated counter?",
+      "criteria": {
+        "yes": "nhieu loai dau hieu xuat hien cung mot khoang thoi gian va cung mot nguoi dung",
+        "no": "chi co mot loai dau hieu don le, khong co chuoi hoat dong",
+        "unknown": "khong du thoi gian de xac dinh khoang hop nhat cua cac dau hieu"
+      }
+    },
+    "behavior": {
+      "type": "choice",
+      "instructions": "Which pattern best fits this profile?",
+      "criteria": {
+        "binh_thuong": "ordinary work inside the bank, no personal mailbox and no bulk delete",
+        "dong_bo": "directory or mailbox sync, high Entra volume without mail or file actions by a person",
+        "dang_nhap_cu": "failures on a disabled account with no successful new activity",
+        "nguoi_thao_tac": "a person acting off-hours or after the disable date",
+        "don_du_lieu": "deleting or sending files and mail together, including sends to a personal mailbox"
+      }
+    },
+    "severity": {
+      "type": "score",
+      "instructions": "How soon should an analyst open this profile? Bank hard rules already set a floor; this score only ranks the profile and never raises the severity.",
+      "criteria": [
+        "theo doi: no extra review beyond the rule floor",
+        "xem trong ngay: open after the hard-rule queue",
+        "xem ngay: open together with the hard-rule queue"
+      ]
+    }
+  }
+}

@@ -1,6 +1,6 @@
 ---
 name: analyzing-azure-ad-signin-logs
-description: "Analyze Entra ID and Azure AD sign-in logs for account compromise, password spraying, and impossible travel. Use when a sign-in or risky-sign-in export is provided, or an identity incident needs a timeline. Detection thresholds live in references/thresholds.md."
+description: "Analyze Entra ID (Azure AD) sign-in logs for account compromise, password spraying, impossible travel, and off-hours access. Use when an interactive, non-interactive, or risky sign-in export (CSV/JSON) is provided for one or more identities. Not for mailbox auditing, file-exfiltration analysis, or UEBA alert ranking."
 allowed-tools:
   - Read
   - Grep
@@ -8,321 +8,136 @@ allowed-tools:
   - Bash
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
 domain: cybersecurity
 subdomain: identity-security
 mitre_attack: [T1078, T1110, T1098]
-prerequisites: Azure AD Premium P1/P2 license Access to Azure AD Sign-in logs Microsoft Sentinel or Log Analytics (optional) AzureAD PowerShell module
-expected_output: JSON format with login analysis and threat indicators
+nist_csf: [DE.CM-1, DE.CM-3, DE.AE-1, PR.AA-06]
 tags:
-  - [Azure
-  - AD
-  - Identity
+  - azure-ad
+  - entra-id
   - signin-logs
+  - identity-security
   - account-takeover
-  - insider-threat
-  - Microsoft
-  - UEBA]
+  - impossible-travel
 metadata:
   owner: security-skills-team
   tier: 3
   source: local
 ---
 
-# Analyzing Azure AD Sign-in Logs (Tier 3)
+# Phân tích Azure AD / Entra ID Sign-in Logs (Tier 3)
 
 ## Overview
-This skill guides the analysis of Azure Active Directory (Azure AD/Microsoft Entra ID) sign-in logs to detect account compromise, anomalous login patterns, and potential insider threat activities. It supports the **Abnormal User Behavior** playbook with identity-based evidence.
+
+Hướng dẫn phân tích log đăng nhập Azure Active Directory (Microsoft Entra ID) để phát hiện chiếm đoạt tài khoản, mẫu đăng nhập bất thường (brute force, password spray, impossible travel, truy cập ngoài giờ, vị trí/thiết bị mới) và phục vụ hồ sơ điều tra dựa trên bằng chứng danh tính.
+
+Ngưỡng phát hiện, quy trình chi tiết và mẫu báo cáo nằm ở `references/`. SKILL.md chỉ giữ phần điều hướng.
+
+> Mốc thời gian pháp lý: xem `../_shared/compliance-vietnam.md` (nguồn sự thật duy nhất).
 
 ## When to Use
-Triggered by:
-- **playbook-abnormal-user-behavior-response**: To analyze login anomalies
-- **playbook-phishing-response**: To check for account compromise after phishing
-- **playbook-data-leak-response**: To identify initial access vector
+
+- `playbook-abnormal-user-behavior-response`: phân tích bất thường đăng nhập theo hồ sơ người dùng.
+- `playbook-phishing-response`: kiểm tra tài khoản bị chiếm sau sự cố phishing.
+- `playbook-pre-departure-insider-review`: rà soát truy cập của nhân sự sắp nghỉ việc.
+- `playbook-after-hours-internal-access-investigation`: điều tra truy cập nội bộ ngoài giờ.
+- Điều tra trực tiếp: đăng nhập lạ, tài khoản bị khóa, hoặc cần dựng timeline.
 
 ## Prerequisites
-- Azure AD Premium P1/P2 (for detailed sign-in logs)
-- Permissions: Security Reader, Security Operator, or Global Admin
-- Tools: Azure Portal, Microsoft Graph API, or AzureAD PowerShell module
 
----
+- Export log đăng nhập (interactive, non-interactive, risky sign-in) dạng CSV/JSON, tối thiểu có: timestamp, user/UPN, IP, location, status/error code, device detail, application, correlation id.
+- Baseline đăng nhập lịch sử **riêng cho từng user** trong phạm vi, hoặc file baseline đã export.
+- Danh sách user/IP trong phạm vi và câu hỏi điều tra cụ thể.
+- Quyền truy cập nguồn log: Azure Portal, Microsoft Graph API (`Get-MgAuditSignInLog`) hoặc module AzureAD (`Get-AzureADAuditSignInLogs`, `Get-AzureADMSriskySignInActivity`). Xem `references/collection-and-sources.md`.
+- Quy tắc chuyển múi giờ và định nghĩa ngoài giờ: `../_shared/off-hours-and-baseline.md`.
 
-## 1. Log Collection
+**STOP rule:** Nếu thiếu một điều kiện bắt buộc ở trên, dừng tại bước đó, không phân tích tiếp. Trả `insufficient_evidence` và liệt kê artefact còn thiếu theo Rules dòng 1-2.
 
-### 1.1 Sign-in Log Types
-| Log Type | Retention | Details |
-|----------|-----------|---------|
-| **Interactive Sign-ins** | 30 days (P1), 90 days (P2) | User login with password, MFA |
-| **Non-interactive Sign-ins** | 30 days | Service accounts, scripts |
-| **Azure AD Federation** | 30 days | SAML, OAuth flows |
-| **Risky Sign-ins** | 90 days | Azure AD Identity Protection |
+## Execution Steps
 
-### 1.2 Collection Methods
+### Step 1 - Thu thập và xác thực dữ liệu
 
-#### Azure Portal (Manual)
-```
-Azure Portal > Azure Active Directory > Sign-in logs > Filter by user/date
-```
+Theo `references/collection-and-sources.md`: chọn loại log, export bằng Azure Portal / Graph / AzureAD PowerShell, xác nhận file đọc được, đếm số dòng, xác định khoảng thời gian, ghi nhận lỗi chất lượng dữ liệu.
 
-#### PowerShell Collection
-```powershell
-# Connect to Azure AD
-Connect-AzureAD
+### Step 2 - Chuẩn hoá thời gian và định danh
 
-# Get sign-in logs for specific user
-Get-AzureADAuditSignInLogs -Filter "UserPrincipalName eq 'huyhq@domain.com'" |
-    Select-Object CreatedDateTime, UserPrincipalName, IpAddress, Location, Status |
-    Export-CSV -Path "signin_logs_huyhq.csv"
+- Chuyển timestamp Entra ID (gốc UTC) sang giờ Việt Nam theo `../_shared/off-hours-and-baseline.md` trước khi so sánh ngoài giờ.
+- Khớp tên người dùng theo quy tắc so sánh tên trong file shared; tên mơ hồ ghi `ambiguous`, không tự chọn.
+- Không có baseline riêng cho user -> ghi `insufficient_evidence` cho hạng mục baseline, KHONG ước lượng mu/sigma.
 
-# Get risky sign-ins
-Get-AzureADMSriskySignInActivity |
-    Select-Object UserPrincipalName, RiskLevel, RiskState, TopRiskLevel |
-    Export-CSV -Path "risky_signins.csv"
-```
+### Step 3 - Chấm điểm rủi ro theo bảng ngưỡng
 
-#### Microsoft Graph API
-```powershell
-# Using Graph SDK
-Import-Module Microsoft.Graph.SignIn
-Select-MgProfile -Name "beta"
+Nạp `references/thresholds.md` và áp dụng **đúng** các ngưỡng trong đó cho 5 trục: thất bại đăng nhập, impossible travel, ngoài giờ, vị trí/thiết bị mới, risky sign-in. Không tự đặt thêm ngưỡng.
 
-Get-MgAuditSignInLog -Filter "UserPrincipalName eq 'huyhq@domain.com'" |
-    Select-Object CreatedDateTime, UserDisplayName, IPAddress, Location, Status
-```
+### Step 4 - Phân tích theo 5 trục
 
----
+Thực hiện chi tiết theo `references/analysis-sop.md`: (1) thất bại đăng nhập, (2) impossible travel, (3) ngoài giờ, (4) vị trí/thiết bị/ASN mới, (5) risky sign-in của Identity Protection.
 
-## 2. Analysis Procedures
+Mỗi trục ghi: bằng chứng, giá trị quan sát được, ngưỡng đã áp dụng, kết luận (có bằng chứng / giả thuyết / cần thêm dữ liệu).
 
-### Step 2.1: Failed Sign-in Analysis
-*Identify brute force or credential stuffing attempts.*
+### Step 5 - Trích xuất IOC và dựng timeline
 
-| Indicator | Threshold | Risk |
-|-----------|-----------|------|
-| **Failed attempts** | > 5 failures in 10 minutes | High |
-| **Multiple accounts** | Failures across > 5 accounts from 1 IP | Critical |
-| **Password spray** | Low and slow failures across many users | High |
-| **Lockout pattern** | Account locked after failures | Medium |
+- IOC: IP, vị trí, thiết bị, user, error code, correlation id - chỉ ghi giá trị thực sự có trong log.
+- Timeline: sắp theo thời gian đã chuẩn hoá, gắn nhãn bình thường / bất thường.
+- Mẫu báo cáo và JSON đầy đủ: `references/output-example.md`.
 
-```powershell
-# Query failed sign-ins for brute force
-Get-AzureADAuditSignInLogs -Filter "Status/ErrorCode eq 50053" |
-    Where-Object { $_.CreatedDateTime -gt (Get-Date).AddHours(-1) } |
-    Group-Object IpAddress |
-    Where-Object { $_.Count -gt 5 } |
-    Select-Object Name, Count
-```
+### Step 6 - Phân cấp và đề xuất hành động
 
-### Step 2.2: Impossible Travel Detection
-*Identify logins from geographically impossible locations.*
+- Phân cấp P1-P4 theo `../_shared/severity-and-escalation.md`; nêu rõ điều kiện nào đã chứng minh.
+- Hành động khắc phục **chỉ được đề xuất**, không thực thi (Rules dòng 6). Danh sách: `references/remediation-and-correlation.md`.
 
-| Check | Calculation |
-|-------|-------------|
-| **Logic** | Same user, different country, time < travel duration |
-| **Tolerance** | Allow 2-4 hours for legitimate travel |
-| **Red Flag** | < 2 hours between countries |
+### Step 7 - Đối chiếu chéo nguồn khác
+
+Đối chiếu timeline đăng nhập với Varonis UEBA, log email, OneDrive/SharePoint, log VPN. Chi tiết: `references/remediation-and-correlation.md`.
+
+## Expected Output
+
+1. **Báo cáo** (markdown): tóm tắt điều tra, bảng chi tiết theo từng trục, phân cấp P1-P4, danh sách IOC, hành động đề xuất.
+2. **JSON** (fenced, mẫu minh hoạ):
 
 ```json
 {
-  "impossible_travel": {
-    "user": "huyhq@domain.com",
-    "login_1": {
-      "location": "Ho Chi Minh City, Vietnam",
-      "time": "2024-01-15 08:00:00 UTC",
-      "ip": "103.x.x.x"
-    },
-    "login_2": {
-      "location": "London, UK",
-      "time": "2024-01-15 10:30:00 UTC",
-      "ip": "185.x.x.x"
-    },
-    "time_difference_hours": 2.5,
-    "travel_time_hours": 12,
-    "is_impossible": true,
-    "risk": "Critical"
-  }
-}
-```
-
-### Step 2.3: Unusual Hours Analysis
-*Detect after-hours or weekend access.*
-
-| Pattern | Normal Hours | Suspicious Hours |
-|---------|--------------|------------------|
-| **Weekday** | 07:45 - 17:30 | 17:30 - 07:45 |
-| **Weekend** | No access expected | Any access |
-| **Holiday** | No access expected | Any access |
-
-```powershell
-# Find unusual hours login
-Get-AzureADAuditSignInLogs -Filter "UserPrincipalName eq 'huyhq@domain.com'" |
-    Where-Object {
-        $hour = $_.CreatedDateTime.Hour
-        ($hour -lt 6 -or $hour -gt 22) -or
-        ($_.CreatedDateTime.DayOfWeek -eq 'Saturday') -or
-        ($_.CreatedDateTime.DayOfWeek -eq 'Sunday')
-    } |
-    Select-Object CreatedDateTime, Location, IpAddress, DeviceDetail
-```
-
-### Step 2.4: New Location/Device Detection
-*Identify first-time access from new locations.*
-
-| Check | Description |
-|-------|-------------|
-| **New Location** | Country/city never seen for this user |
-| **New Device** | Device ID not previously seen |
-| **New ISP** | ASN different from historical |
-| **VPN/Proxy** | Known VPN IPs, anonymizers |
-
-```powershell
-# Get all unique locations for user (baseline)
-$baseline = Get-AzureADAuditSignInLogs -Filter "UserPrincipalName eq 'huyhq@domain.com'" |
-    Select-Object -ExpandProperty Location -Unique
-
-# Recent logins
-$recent = Get-AzureADAuditSignInLogs -Filter "UserPrincipalName eq 'huyhq@domain.com' and CreatedDateTime gt 2024-01-01"
-
-# Find new locations
-$recent | Where-Object { $baseline -notcontains $_.Location }
-```
-
-### Step 2.5: Risky Sign-in Indicators
-*Analyze Azure AD Identity Protection risky sign-ins.*
-
-| Risk Type | Indicators | MITRE |
-|-----------|------------|-------|
-| **Leaked Credentials** | Password found in breach | T1078 |
-| **Anonymous IP** | Tor, VPN without exit node | T1090 |
-| **Impossible Travel** | As above | T1078 |
-| **Malicious IP** | Known attack source | T1078 |
-| **Unfamiliar Location** | New country for user | T1078 |
-
----
-
-## 3. IOC Extraction
-
-### 3.1 Indicators
-```json
-{
-  "analysis_id": "AZAD-SIGNIN-20240115-001",
-  "user": "huyhq@domain.com",
-  "time_range": {
-    "start": "2024-01-01T00:00:00Z",
-    "end": "2024-01-15T23:59:59Z"
+  "skill": "analyzing-azure-ad-signin-logs",
+  "status": "ok",
+  "scope": {
+    "users": ["user@example.com"],
+    "time_range": {"start": "YYYY-MM-DDTHH:MM:SSZ", "end": "YYYY-MM-DDTHH:MM:SSZ"},
+    "log_types": ["interactive"]
   },
-  "summary": {
-    "total_signins": 145,
-    "failed_signins": 12,
-    "unique_locations": 5,
-    "unique_ips": 8,
-    "after_hours_count": 3,
-    "risky_signins": 1
-  },
-  "anomalies": [
+  "summary": {"total_signins": 0, "failed_signins": 0, "unique_locations": 0, "risky_signins": 0},
+  "findings": [
     {
       "type": "ImpossibleTravel",
-      "details": "Ho Chi Minh City to London in 2.5 hours",
-      "timestamp": "2024-01-15T10:30:00Z",
-      "risk": "Critical"
-    },
-    {
-      "type": "NewLocation",
-      "details": "First login from London, UK",
-      "timestamp": "2024-01-15T10:30:00Z",
-      "risk": "High"
+      "evidence": "",
+      "threshold_applied": "",
+      "conclusion": "evidence|assumption|need_more_data"
     }
   ],
-  "iocs": {
-    "ips": ["185.x.x.x", "103.x.x.x"],
-    "locations": ["London, UK", "Ho Chi Minh City, Vietnam"],
-    "devices": ["Windows 11, Chrome"]
-  },
-  "risk_score": 85
+  "indicators": {"ips": [], "locations": [], "devices": [], "users": []},
+  "severity": "P4",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": []
 }
 ```
 
----
+Ví dụ: `references/output-example.md`.
 
-## 4. Remediation Actions
+## References
 
-### 4.1 For Compromised Account
-| Action | Command | Priority |
-|--------|---------|----------|
-| Force password reset | `Set-AzureADUserPassword -ObjectId <id> -ForceChangePasswordNextSignIn` | P1 |
-| Revoke sessions | `Revoke-AzureADUserAllRefreshToken -ObjectId <id>` | P1 |
-| Disable account | `Set-AzureADUser -ObjectId <id> -AccountEnabled $false` | P1 |
-| Enable MFA | Require MFA registration | P1 |
-
-### 4.2 For Insider Threat (No Compromise)
-| Action | Purpose | Priority |
-|--------|---------|----------|
-| Enhanced monitoring | Watch for additional anomalies | P2 |
-| Remove sensitive access | Temporary until investigation complete | P2 |
-| HR consultation | Coordinate with HR for interview | P2 |
-
----
-
-## 5. Correlation with Other Sources
-
-*Cross-reference with:*
-- **Varonis UEBA**: Compare login times with file access
-- **Email logs**: Check if account used to send suspicious emails
-- **SharePoint/OneDrive**: Verify data access after unusual login
-- **VPN logs**: Confirm VPN connection before Azure login
-
----
-
-## 6. Expected Output
-
-```json
-{
-  "analysis_id": "AZAD-ANALYSIS-20240115-001",
-  "user_analyzed": "huyhq@domain.com",
-  "time_range_analyzed": "2024-01-01 to 2024-01-15",
-  "findings": {
-    "compromised_indicators": {
-      "impossible_travel": true,
-      "unusual_hours": true,
-      "new_location": true,
-      "failed_brute_force": false
-    },
-    "overall_risk": "High",
-    "most_likely_scenario": "AccountCompromised"
-  },
-  "timeline": [
-    {
-      "time": "2024-01-15T08:00:00Z",
-      "location": "Ho Chi Minh City, Vietnam",
-      "ip": "103.x.x.x",
-      "device": "Windows 11",
-      "risk": "Low",
-      "status": "Normal"
-    },
-    {
-      "time": "2024-01-15T10:30:00Z",
-      "location": "London, UK",
-      "ip": "185.x.x.x",
-      "device": "Unknown",
-      "risk": "Critical",
-      "status": "Anomalous"
-    }
-  ],
-  "actions_taken": ["SessionRevoked", "MFAEnabled"],
-  "recommendation": "ForcePasswordReset",
-  "escalation": {
-    "escalate": true,
-    "playbook": "playbook-abnormal-user-behavior-response"
-  }
-}
-```
-
----
-
-## Related Playbooks
-- [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Full behavioral investigation
-- [`playbook-phishing-response`](../playbook-phishing-response/SKILL.md) - Post-phishing account check
-- [`playbook-data-leak-response`](../../drafts/playbook-data-leak-response/SKILL.md) - Initial access investigation
+- `references/thresholds.md` - bảng ngưỡng phát hiện (nguồn duy nhất).
+- `references/collection-and-sources.md` - loại log, cách export, kiểm tra dữ liệu.
+- `references/analysis-sop.md` - SOP chi tiết cho 5 trục phân tích.
+- `references/output-example.md` - mẫu báo cáo và JSON đầy đủ.
+- `references/remediation-and-correlation.md` - hành động đề xuất, đối chiếu chéo.
+- `../_shared/compliance-vietnam.md` - mốc thời gian pháp lý.
+- `../_shared/severity-and-escalation.md` - thang P1-P4 và mã leo thang.
+- `../_shared/off-hours-and-baseline.md` - giờ làm việc, múi giờ, cách tính baseline.
+- `../_shared/mitre-nist-mapping.md` - ID MITRE/NIST hợp lệ.
+- [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md)
+- [`playbook-phishing-response`](../playbook-phishing-response/SKILL.md)
+- [`playbook-pre-departure-insider-review`](../playbook-pre-departure-insider-review/SKILL.md)
 
 ## Rules (bat buoc)
 
