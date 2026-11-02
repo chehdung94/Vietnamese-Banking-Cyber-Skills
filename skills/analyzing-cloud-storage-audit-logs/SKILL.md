@@ -370,7 +370,7 @@ New-AzStorageAccountSASToken -Service Blob -ResourceType Container,Object `
 ---
 
 ## Related Playbooks
-- [`playbook-data-leak-response`](../_drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
+- [`playbook-data-leak-response`](../drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
 - [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Insider threat investigation
 - [`analyzing-dlp-alerts`](../analyzing-dlp-alerts/SKILL.md) - DLP correlation
 
