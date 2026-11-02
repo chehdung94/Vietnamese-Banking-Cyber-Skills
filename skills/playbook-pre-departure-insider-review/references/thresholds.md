@@ -43,7 +43,7 @@ hoi va danh sach nguoi duoc bao lay tu `../_shared/severity-and-escalation.md`.
 | Web gateway / DLP | Luon phan tich | Bat buoc | Bang ghi trong skill nay |
 | Device control (DLP) | Luon phan tich | Bat buoc | Bang ghi trong skill nay |
 | Endpoint security | Luon phan tich | Bat buoc | Bang ghi trong skill nay |
-| VPN logs | Tra loi 5 cau hoi Value Assessment; neu co tu 2 cau tra loi "Khong" -> SKIP va ghi ly do | Chay neu du dieu kien | `../analyzing-vpn-logs/SKILL.md` |
+| VPN logs | Tra loi 5 cau hoi Value Assessment; neu so cau tra loi "Khong" vuot nguong quy dinh trong `../analyzing-vpn-logs/references/thresholds.md` -> can nhac SKIP va ghi ly do | Chay neu du dieu kien | `../analyzing-vpn-logs/references/thresholds.md` |
 | Endpoint - muc do su co malware / virus | tu 7 tro len | Ghi nhan vao phat hien | Bang ghi trong skill nay |
 
 ## 6. Danh sách domain tin cay (whitelist) cho phan tich email

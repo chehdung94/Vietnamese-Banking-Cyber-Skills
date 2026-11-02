@@ -87,7 +87,10 @@ mu/sigma; khong uoc luong (`../_shared/off-hours-and-baseline.md`).
 ### Step 2: Phan tich da kenh
 
 Chay cac kenh bat buoc (email, web gateway / DLP, device control, endpoint security) va
-kenh VPN co dieu kien. Quy trinh chi tiet tai `references/analysis-procedure.md`.
+kenh VPN co dieu kien. Nguong Value Assessment cua kenh VPN do bang nguong cua skill
+analyzing-vpn-logs quy dinh (`../analyzing-vpn-logs/SKILL.md`, muc "Value Assessment");
+neu so cau tra loi "Khong" vuot nguong do -> can nhac SKIP va ghi ro ly do. Quy trinh chi
+tiet tai `references/analysis-procedure.md`.
 
 Tier 3: `../analyzing-email-audit-logs/SKILL.md`, `../analyzing-dlp-alerts/SKILL.md`,
 `../analyzing-vpn-logs/SKILL.md`.
@@ -175,7 +178,7 @@ Vi du mau cua skill nay: `references/report-template.md`.
 - `../_shared/mitre-nist-mapping.md` - ID MITRE ATT&CK v18 va NIST CSF 2.0 hop le.
 - `../analyzing-email-audit-logs/SKILL.md` - Tier 3 phan tich email.
 - `../analyzing-dlp-alerts/SKILL.md` - Tier 3 phan tich DLP.
-- `../analyzing-vpn-logs/SKILL.md` - Tier 3 phan tich VPN.
+- `../analyzing-vpn-logs/SKILL.md` - Tier 3 phan tich VPN va nguong Value Assessment.
 
 ## Rules (bat buoc)
 

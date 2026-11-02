@@ -57,8 +57,9 @@ Trong tam quan sat:
 
 Tier 3: `../analyzing-vpn-logs/SKILL.md`.
 
-Tra loi 5 cau hoi Value Assessment truoc khi phan tich. Neu co tu 2 cau tra loi
-"Khong" -> SKIP, ghi ro ly do trong bao cao va ghi path nguon log de dung sau nay.
+Tra loi 5 cau hoi Value Assessment truoc khi phan tich. Neu so cau tra loi "Khong"
+vuot nguong quy dinh trong `../analyzing-vpn-logs/references/thresholds.md` -> can nhac
+SKIP, ghi ro ly do trong bao cao va ghi path nguon log de dung sau nay.
 
 ## 7. Phat hien keo theo (cross-user collusion)
 
