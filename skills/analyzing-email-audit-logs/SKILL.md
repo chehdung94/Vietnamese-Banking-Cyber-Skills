@@ -1,6 +1,6 @@
 ---
 name: analyzing-email-audit-logs
-description: "Analyze Exchange and M365 message traces for exfiltration to personal mailboxes, forwarding rules, and inbox rules. Use when a message trace, mailbox audit, or suspicious outbound mail is provided. Standalone-email decisions follow references/decision-procedure.md."
+description: "Analyze Exchange Online message traces and M365 mailbox audit logs for exfiltration to personal mailboxes, auto-forwarding, and inbox rule abuse. Use when a message trace or mailbox audit export is supplied. Not for file server, endpoint, DLP console, or cloud storage audit analysis."
 allowed-tools:
   - Read
   - Grep
@@ -8,384 +8,147 @@ allowed-tools:
   - Bash
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
 domain: cybersecurity
 subdomain: email-security
-mitre_attack: [T1114, T1566, T1048]
-prerequisites: Exchange Online PowerShell or Exchange Admin Center Microsoft 365 E3/E5 license Audit log search enabled Mail gateway logs (optional)
-expected_output: JSON format with email analysis and exfiltration indicators
+mitre_attack: [T1114, T1048, T1078]
+nist_csf: [DE.CM-1, DE.CM-3, DE.AE-1, RS.MI-1]
+prerequisites:
+  - Message trace / mailbox audit / unified audit log export in scope
+  - Identity of the mailbox owner under investigation
+  - Internal domain name and approved partner domain whitelist
+  - Per-user email baseline, or an explicit statement that none exists
+expected_output: JSON report with email exfiltration findings, indicators, severity, and recommended actions
 tags:
-  - [email
+  - email
   - Exchange
   - M365
   - audit-logs
   - exfiltration
   - BEC
   - phishing
-  - data-leak]
+  - data-leak
 metadata:
   owner: security-skills-team
   tier: 3
   source: local
 ---
 
-# Analyzing Email Audit Logs (Tier 3)
+# Phan tich Email Audit Logs (Tier 3)
 
 ## Overview
-This skill guides the analysis of email audit logs to detect data exfiltration via email, phishing campaigns, and unauthorized email rules. It supports the **Data Leak Response** and **Abnormal User Behavior** playbooks by providing email-based evidence.
+
+Skill nay huong dan phan tich log kiem tra email (Exchange Online message trace, mailbox audit, unified audit log) de phat hien ro ri du lieu qua email, hop thu bi chiem doat va quy tac tu chuyen tiep bat thuong. Ket qua la bang chung email cho phong ro ri du lieu, dieu tra hanh vi bat thuong va dieu tra phishing.
+
+Pham vi: huong email, dia chi nhan, quy tac hop thu, khoi luong tep dinh kem, baseline va IOC. Moi lenh khac phuc chi duoc DE XUAT, khong chay tu dong.
 
 ## When to Use
-Triggered by:
-- **playbook-data-leak-response**: To identify email as exfiltration route
-- **playbook-abnormal-user-behavior-response**: To check email patterns for insider threat
-- **playbook-phishing-response**: To analyze email delivery and impact
 
----
+Dung khi:
+- Phong ro ri du lieu can xac dinh email la duong ro ri.
+- Dieu tra hanh vi bat thuong can doi chieu mau hanh vi gui/nhan mail theo tung nguoi dung.
+- Dieu tra phishing can danh gia muc do lan toa va pham vi nhan vien bi anh huong.
+- Nguoi dung cap file message trace, mailbox audit log hoac unified audit log.
 
-## 1. Log Collection
+Khong dung cho:
+- Phan tich file server / endpoint (xem `../analyzing-ueba-alerts-varonis/SKILL.md`).
+- Phan tich co canh bao DLP (xem `../analyzing-dlp-alerts/SKILL.md`).
+- Phan tich log cloud storage (xem `../analyzing-cloud-storage-audit-logs/SKILL.md`).
 
-### 1.1 Collection Sources
-| Source | Log Type | Retention |
-|--------|----------|-----------|
-| **Exchange Online** | MessageTrace, MailboxAudit, AuditLog | 90 days |
-| **Exchange On-Premises** | Transport logs, Message Tracking | 30 days (configurable) |
-| **Mail Gateway** | SMTP logs, Filter logs | Varies |
-| **Egress Monitor** | DLP alerts, Transport Rules | 90 days |
+## Prerequisites
 
-### 1.2 Collection Commands
+- File export message trace / mailbox audit / unified audit log trong pham vi, co it nhat: thoi diem nhan, dia chi gui, dia chi nhan (To/CC/BCC), chu de, trang thai, kich thuoc tep dinh kem.
+- Danh tinh hop thu chu so huu can dieu tra (dia chi day du) va ma nhan vien neu co.
+- Danh sach domain noi bo + whitelist doi tac ngan hang do nguoi dung xac nhan.
+- Baseline hanh vi gui mail cua tung nguoi dung, theo quy tac tai `../_shared/off-hours-and-baseline.md`.
+- Quyen doc log hop thu (mailbox audit, inbox rule, forwarding config) khi can kiem tra quy tac chuyen tiep.
 
-#### Exchange Online PowerShell
-```powershell
-# Connect to Exchange Online
-Connect-ExchangeOnline
+**STOP rule:** Neu thieu mot dieu kien bat buoc o tren, dung tai buoc do, khong phan tich tiep.
+Tra `insufficient_evidence` va liet ke artefact con thieu theo Rules dong 1-2.
+Neu thieu baseline: ghi ro ly do bo qua rule baseline, KHONG uoc luong gia tri baseline.
 
-# Message Trace (last 48 hours)
-Get-MessageTrace -SenderAddress "huyhq@domain.com" -StartDate (Get-Date).AddDays(-7) |
-    Select-Object Received, SenderAddress, RecipientAddress, Subject, Status, IPAddress |
-    Export-CSV -Path "message_trace.csv"
+## Execution Steps
 
-# Detailed Message Trace
-Get-MessageTraceDetail -MessageTraceId <ID> -RecipientAddress user@domain.com
+### Step 1 - Chuẩn hóa scope và dữ liệu
+- Chốt khoang thoi gian, danh sách nguoi dung va nguon log trong pham vi.
+- Chuan hoa ten theo quy tac so sanh ten tai `../_shared/off-hours-and-baseline.md`; trung ten -> ghi `ambiguous`, hoi nguoi dung.
+- Chuan hoa timestamp: Exchange Online / Entra goc UTC -> cong 7 theo `../_shared/off-hours-and-baseline.md`.
+- Cac buoc thu thap du lieu va cau lenh PowerShell: `references/collection-and-queries.md`.
 
-# Mailbox Audit Logs (requires auditing enabled)
-Search-UnifiedAuditLog -UserIds "huyhq@domain.com" -StartDate (Get-Date).AddDays(-30) |
-    Export-CSV -Path "audit_logs.csv"
-```
+### Step 2 - Phân loại hướng email (bắt buộc trước khi đánh giá rủi ro)
+Khong gop chung inbound va outbound. Chi tiet dinh nghia va xu huong xem `references/analysis-playbook.md`.
+- OUTBOUND: tu hop thu cong ty ra ngoai -> can dieu tra khan.
+- INBOUND: tu ngoai vao hop thu cong ty -> tu chuyen tiep / staging, khong phai exfiltration.
+- MIXED: thread co ca hai huong -> phan tich tung email trong thread.
 
-#### Mailbox Folder Permissions
-```powershell
-# Check delegate access (possible mailbox compromise)
-Get-MailboxPermission -Identity "huyhq@domain.com" |
-    Where-Object { $_.User -notlike "NT AUTHORITY\*" }
+### Step 3 - Phân loại domain đích
+- Ap dung danh sach whitelist (domain noi bo, doi tac ngan hang, nha cung cap da duyet) do nguoi dung xac nhan.
+- Domain ca nhan (freemail) va domain la khong -> gan nhan de danh gia, khong tu quyet dinh la hong.
+- Danh sach phan loai domain mau: `references/analysis-playbook.md`.
 
-# Check inbox rules created
-Get-InboxRule -Mailbox "huyhq@domain.com" |
-    Select-Object Name, Enabled, ForwardTo, RedirectTo, DeleteMessage
-```
+### Step 4 - Phát hiện gửi standalone và hoạt động liên-mailbox
+- Standalone: email chi gui ra dia chi ca nhan, khong co dia chi noi bo/doi tac trong To/CC/BCC.
+- Dieu kien kich hoat phan tich lien-mailbox va quy tac so sanh: `references/thresholds.md`.
+- Cross-user: dia chi ca nhan cua nguoi dung A xuat hien trong nguoi nhan cua nguoi dung B -> nghi thao tac phoi hop.
+- Phan biet email gui ra ngoai doc lap voi tu chuyen tiep chinh no, hai truong hop co phan cap khac nhau.
 
----
+### Step 5 - So sánh baseline
+- So sanh khoi luong gui ra ngoai, kich thuoc dinh kem, so nguoi nhan ngoai, hoat dong ngoai gio voi baseline tung nguoi dung.
+- Bieu mau va cach tinh delta: `references/analysis-playbook.md`.
+- Rule mu + sigma chi ap dung khi du dieu kien mau theo `../_shared/off-hours-and-baseline.md`.
 
-## 2. Exfiltration Detection Patterns
+### Step 6 - Trích xuất IOC
+- Dia chi nhan, dia chi gui, ten tep dinh kem, domain dich, quy tac hop thu, khoa du lieu.
+- Chi ghi nhung gi co trong bang chung; truong khong co du lieu ghi `[NOT_AVAILABLE]` (Rules dong 1-3).
 
-### 2.1 Large Email Attachment Detection
-*Detect users sending large attachments externally.*
+### Step 7 - Phân cấp và đề xuất hành động
+- Xac dinh muc P1-P4 theo `../_shared/severity-and-escalation.md`; khong tao bang phan cap rieng.
+- Neu co du lieu bi rut co bang chung -> phan cap theo bang shared, khong ha cap.
+- Moc thoi gian phap ly lay tu `../_shared/compliance-vietnam.md`; khong ghi so gio/ngay cuc the trong body skill.
+- Danh sach hanh dong de xuat (goi y, khong chay): `references/analysis-playbook.md`.
 
-| Pattern | Threshold | Risk |
-|---------|-----------|------|
-| **Single large file** | > 10 MB to external | Medium |
-| **Multiple files** | > 5 files in 1 hour | High |
-| **Daily total** | > 50 MB sent externally | Medium |
-| **Zipped files** | .zip with sensitive names | High |
+## Expected Output
 
-```powershell
-# Find large attachments sent externally
-Get-MessageTrace -StartDate (Get-Date).AddDays(-7) |
-    Where-Object { $_.Size -gt 10MB -and $_.RecipientAddress -notlike "*@domain.com" } |
-    Select-Object Received, SenderAddress, RecipientAddress, Subject, Size
-```
-
-### 2.2 External Recipient Pattern
-*Detect unusual external communication.*
-
-| Pattern | Normal | Suspicious |
-|---------|--------|------------|
-| **External volume** | < 10 emails/day | > 50 emails/day |
-| **New contacts** | Rare | Frequent |
-| **BCC usage** | Occasional | Heavy BCC to hide |
-| **Auto-forward** | None | Rule created |
-
-```powershell
-# Check for auto-forwarding rules
-Get-InboxRule -Mailbox "huyhq@domain.com" |
-    Where-Object { $_.ForwardTo -or $_.RedirectTo } |
-    Select-Object Name, ForwardTo, RedirectTo
-
-# Check mail forwarding configuration
-Get-Mailbox -Identity "huyhq@domain.com" |
-    Select-Object DisplayName, ForwardingSmtpAddress, DeliverToMailboxAndForward
-```
-
-### 2.3 Suspicious Subject/Content Keywords
-*Keyword-based detection.*
-
-| Category | Keywords |
-|----------|----------|
-| **Financial** | invoice, payment, bank transfer, SWIFT |
-| **PII** | salary, password, SSN, passport |
-| **Sensitive** | confidential, secret, internal, not for sharing |
-| **Archive** | backup, archive, old, 2023, 2024 |
-
-```powershell
-# Search for sensitive keywords in emails
-Get-MessageTrace -StartDate (Get-Date).AddDays(-7) |
-    Where-Object { 
-        $_.Subject -match "invoice|password|confidential|backup" -and
-        $_.RecipientAddress -notlike "*@domain.com"
-    } |
-    Select-Object Received, SenderAddress, RecipientAddress, Subject
-```
-
----
-
-## 2B. Email Direction Classification 🆕
-
-> **⚠️ BẮT BUỘC:** Phân loại hướng email trước khi đánh giá rủi ro. Không gộp chung INBOUND và OUTBOUND.
-
-| Direction | Definition | Risk Context | Example |
-|---|---|---|---|
-| ⬅ **INBOUND** | External → Company | Self-forwarding, data staging. Không phải exfiltration | Gmail cá nhân → hộp thư công ty |
-| ➡ **OUTBOUND** | Company → External | **POTENTIAL EXFILTRATION** – cần điều tra khẩn | Hộp thư công ty → Gmail cá nhân |
-| ↔ **MIXED** | Both directions in thread | Context-dependent – kiểm tra từng email trong thread | Thread có cả internal và external |
-| ➡ **OUTBOUND CC** | Company → External CC | Rủi ro thấp hơn nếu main recipients là internal | CC Gmail cá nhân trong email công việc |
-
-## 2C. Domain Classification & Whitelist 🆕
-
-> **Trước khi phân tích, thiết lập whitelist domain.**
-
-| Category | Examples | Treatment |
-|---|---|---|
-| **Internal** | @company.com.vn | ✅ Exclude from risk |
-| **Banking Partners** | bidv.com.vn, sacombank.com, napas.com.vn, vietcombank.com.vn... | ✅ Exclude from risk (whitelist) |
-| **Known Vendors** | microsoft.com, amazon.com, service providers | ✅ Exclude from risk |
-| **Personal Domains** | gmail.com, yahoo.com, outlook.com, icloud.com, proton.me | 🔴 **FLAG – HIGH RISK** |
-| **Unknown** | All other external domains | 🟡 Flag for review |
-
-## 2D. Standalone Email Detection (EXFILTRATION INDICATOR) 🆕
-
-**Mục đích:** Phát hiện email gửi RIÊNG đến personal domain, không có internal/partner recipients trong To/CC/BCC.
-
-**Phương pháp:**
-```
-1. FILTER: Tất cả email có personal domain trong recipients (Gmail, Yahoo, Outlook...)
-2. CHECK: Email có @company.com hoặc whitelisted partner domain trong To/CC/BCC không?
-3. CLASSIFY:
-   - YES → "Contextual" (có ngữ cảnh công việc – LOWER RISK)
-   - NO  → "STANDALONE" (chỉ gửi đến Gmail cá nhân – HIGH RISK)
-4. DIRECTION:
-   - OUTBOUND standalone → EXFILTRATION
-   - INBOUND standalone → Self-forwarding
-5. CROSS-USER (nếu ≥2 users): Kiểm tra Gmail của User A có trong mailbox User B không
-```
-
-**Output mẫu:**
-| User | 2026 Emails | Standalone | OUTBOUND | INBOUND | Cross-User |
-|---|---|---|---|---|---|
-| luannt0500 | 30,947 | 4 | 2 | 2 | – |
-| tanvn | 49,901 | 1 | 1 | 0 | → thanhluan22022@gmail.com 🔴 |
-
-## 2E. Cross-Mailbox Analysis (COLLUSION DETECTION) 🆕
-
-**Khi điều tra ≥2 users:**
-
-1. Trích xuất tất cả external email của từng user
-2. Tìm personal Gmail của User A xuất hiện trong recipients của User B
-3. Flag nếu phát hiện cross-mailbox standalone communication
-4. Đối chiếu timeline để xác định coordinated activity
-
----
-
-## 3. Analysis Procedures
-
-### Step 3.1: Baseline Establishment
-*Establish normal email behavior for user.*
-
-| Metric | Normal Baseline | User Value |
-|--------|-----------------|------------|
-| Daily external emails | < 10 | ? |
-| Daily attachments (MB) | < 20 | ? |
-| Unique external recipients/week | < 20 | ? |
-| After-hours emails | Rare | ? |
-
-### Step 3.2: Anomaly Detection
-*Compare current behavior against baseline.*
+1. **Bao cao** (markdown): tom tat, bang chi tiet theo tung email dang ngo, muc P1-P4 theo `../_shared/severity-and-escalation.md`, danh sach IOC, hanh dong de xuat.
+2. **JSON** (fenced, dung schema trong `references/` neu co):
 
 ```json
 {
-  "user": "huyhq@domain.com",
-  "analysis_period": "2024-01-08 to 2024-01-15",
-  "baseline_comparison": {
-    "external_emails": {
-      "baseline_daily_avg": 5,
-      "current_daily_avg": 47,
-      "delta": "+840%",
-      "anomaly": true
-    },
-    "attachment_size": {
-      "baseline_daily_avg_mb": 15,
-      "current_daily_avg_mb": 280,
-      "delta": "+1867%",
-      "anomaly": true
-    },
-    "unique_recipients": {
-      "baseline_weekly": 12,
-      "current_weekly": 89,
-      "new_domains": ["gmail.com", "yahoo.com", "outlook.com"],
-      "anomaly": true
-    }
-  },
-  "risk_level": "Critical"
-}
-```
-
-### Step 3.3: Email Chain Analysis
-*Trace conversation threads for context.*
-
-| Check | Purpose |
-|-------|---------|
-| Reply chain | Is this response to legitimate conversation? |
-| CC/BCC changes | Added recipients without justification? |
-| Attachment changes | Added files not in original? |
-| Subject changes | Removed warning keywords? |
-
----
-
-## 4. IOCs Extraction
-
-```json
-{
-  "analysis_id": "EMAIL-AUDIT-20240115-001",
-  "user": "huyhq@domain.com",
-  "time_range": "2024-01-08 to 2024-01-15",
-  "findings": {
-    "total_external_emails": 328,
-    "total_attachment_mb": 1960,
-    "unique_external_recipients": 89,
-    "suspicious_patterns": [
-      {
-        "type": "LargeDataTransfer",
-        "date": "2024-01-15",
-        "recipients": ["personal@gmail.com"],
-        "size_mb": 450,
-        "files": ["customer_database.xlsx", "employee_salaries.xlsx"],
-        "risk": "Critical"
-      },
-      {
-        "type": "AutoForwardCreated",
-        "date": "2024-01-10",
-        "forward_to": "external@gmail.com",
-        "status": "StillActive",
-        "risk": "High"
-      }
-    ]
-  },
-  "iocs": {
-    "external_emails": ["personal@gmail.com", "backup@yahoo.com"],
-    "attachments": ["customer_database.xlsx", "employee_salaries.xlsx"],
-    "keywords_found": ["invoice", "password", "backup"]
-  }
-}
-```
-
----
-
-## 5. Remediation Actions
-
-### 5.1 Immediate Containment
-| Action | Command | Priority |
-|--------|---------|----------|
-| Block external forwarding | `Set-Mailbox -Identity "user" -ForwardingSmtpAddress $null` | P1 |
-| Delete inbox rules | `Remove-InboxRule -Identity "rule name" -Mailbox "user"` | P1 |
-| Recall sent emails | `Search-Mailbox -DeleteContent` (if Exchange) | P1 |
-| Disable account | `Set-AzureADUser -AccountEnabled $false` | P1 |
-| Notify external recipients | Contact recipients to delete | P2 |
-
-### 5.2 Email Recall Commands
-```powershell
-# Search and delete external emails (Exchange Online)
-Search-Mailbox -SearchQuery "From:'huyhq@domain.com' AND Subject:'Confidential'" `
-    -TargetMailbox "admin@domain.com" -DeleteContent
-
-# Disable auto-forwarding for entire organization
-Get-Mailbox -ResultSize Unlimited |
-    Set-Mailbox -ForwardingSmtpAddress $null
-
-# Remove external forwarding rules
-Get-InboxRule -Mailbox "huyhq@domain.com" |
-    Where-Object { $_.ForwardTo -notlike "*@domain.com" } |
-    Remove-InboxRule -Confirm:$false
-```
-
----
-
-## 6. Escalation Criteria
-
-*Escalate to playbook-data-leak-response if:*
-
-| Criteria | Threshold |
-|----------|-----------|
-| **Data Type** | PII, Financial, Credentials |
-| **Volume** | > 100 records or > 50 MB |
-| **Pattern** | Scheduled/bulk transfer |
-| **Intent** | Evidence of willful exfiltration |
-
----
-
-## 7. Expected Output
-
-```json
-{
-  "analysis_id": "EMAIL-ANALYSIS-20240115-001",
-  "user_analyzed": "huyhq@domain.com",
-  "time_range": {
-    "start": "2024-01-08T00:00:00Z",
-    "end": "2024-01-15T23:59:59Z"
+  "skill": "analyzing-email-audit-logs",
+  "status": "ok",
+  "scope": {
+    "source": "Exchange Online message trace",
+    "time_range": "NOT_AVAILABLE",
+    "users": []
   },
   "summary": {
-    "external_emails_sent": 328,
-    "total_attachment_size_mb": 1960,
-    "unique_external_recipients": 89,
-    "suspicious_activities": 3
+    "emails_analyzed": 0,
+    "outbound_external": 0,
+    "standalone_outbound": 0,
+    "forwarding_rules_found": 0
   },
-  "anomalies": [
-    {
-      "type": "LargeDataTransfer",
-      "timestamp": "2024-01-15T14:30:00Z",
-      "recipient": "personal@gmail.com",
-      "size_mb": 450,
-      "subject": "FW: Customer Database Backup",
-      "risk": "Critical"
-    }
-  ],
-  "iocs": {
-    "recipients": ["personal@gmail.com", "backup@yahoo.com"],
-    "attachments": ["customer_database.xlsx"],
-    "domains": ["gmail.com", "yahoo.com"]
-  },
-  "actions_taken": ["ForwardingRuleRemoved", "ExternalAccessBlocked"],
-  "escalation": {
-    "escalate": true,
-    "playbook": "playbook-data-leak-response",
-    "reason": "PII exfiltration confirmed via email"
-  }
+  "findings": [],
+  "indicators": [],
+  "severity": "P4",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": []
 }
 ```
 
----
+Vi du mau cua skill nay: `references/report-example.md`.
 
-## Related Playbooks
-- [`playbook-data-leak-response`](../../drafts/playbook-data-leak-response/SKILL.md) - Full data breach response
-- [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) - Insider threat investigation
-- [`playbook-phishing-response`](../playbook-phishing-response/SKILL.md) - Phishing investigation
+## References
+
+- Bang nguong phat hien: `references/thresholds.md`
+- Quy trinh phan tich chi tiet, mau bang va quy tac domain: `references/analysis-playbook.md`
+- Buoc thu thap du lieu va cau lenh PowerShell: `references/collection-and-queries.md`
+- Vi du bao cao day du: `references/report-example.md`
+- Muc thoi gian phap ly: `../_shared/compliance-vietnam.md`
+- Bang phan cap P1-P4 va ma leo thang: `../_shared/severity-and-escalation.md`
+- Gio lam viec, timezone, baseline: `../_shared/off-hours-and-baseline.md`
+- Mapping MITRE ATT&CK / NIST CSF hop le: `../_shared/mitre-nist-mapping.md`
+- Lien quan: `../playbook-abnormal-user-behavior-response/SKILL.md`, `../playbook-phishing-response/SKILL.md`, `../analyzing-dlp-alerts/SKILL.md`
 
 ## Rules (bat buoc)
 
