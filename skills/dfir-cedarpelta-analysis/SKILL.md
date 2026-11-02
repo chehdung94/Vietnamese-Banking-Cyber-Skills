@@ -1,6 +1,6 @@
 ---
 name: dfir-cedarpelta-analysis
-description: "Reason through Cedarpelta live-response evidence with a hypothesis-driven DFIR loop - evidence, hypothesis, cross-check, pivot, finding, limitation, follow-up, closure. Use when Cedarpelta Build or Live Response collection output is in scope. Does not replace the SOP in references/."
+description: "Reason through Cedarpelta live-response evidence with a hypothesis-driven DFIR loop - evidence, hypothesis, cross-check, pivot, finding, limitation, follow-up, closure. Use when Cedarpelta Build or Live Response collection output is in scope. Not for SIEM-only, firewall-only, VPN-only, email-only, malware reverse engineering, or generic report-writing tasks."
 allowed-tools:
   - Read
   - Grep
@@ -8,8 +8,17 @@ allowed-tools:
   - Bash
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
+domain: cybersecurity
+subdomain: dfir
+mitre_attack: [T1003.001, T1021.001, T1048, T1053.005, T1059.001, T1074, T1078, T1112, T1114, T1204, T1547.001]
+nist_csf: [DE.CM-1, DE.CM-9, DE.AE-1, DE.AE-3, PR.AA-01, PR.AA-06, RS.MI-1, RS.RP-1]
 tags:
+  - dfir
+  - cedarpelta
+  - live-response
+  - hypothesis-driven
+  - tier-3
 metadata:
   owner: security-skills-team
   tier: 3
@@ -18,96 +27,128 @@ metadata:
 
 # DFIR Cedarpelta Analysis
 
-## Purpose
+## Overview
 
-Use this skill as the investigation brain for Cedarpelta Build / Live Response Collection evidence.
+Skill nay la bo nao dieu tra cho bang chung Cedarpelta Build / Live Response Collection. Noi dung
+dinh nghia cach agent suy luan, dieu tra, pivot, doi chieu cheo va kiem soat dong ho so.
 
-This skill defines how the agent thinks, investigates, pivots, cross-checks, assesses confidence, and controls closure.
+```text
+Evidence -> Hypothesis -> Cross-check -> Pivot -> Finding -> Limitation -> Follow-up -> Closure
+```
+
+Khong hanh x nhu mot bo phan tich artefact don thuan. Khong ket luan vu an "sach" chi vi mot nguon
+artefact sach. Bang chung thieu lam giam do tin cay, tru khi duoc ghi ro la khong ap dung. Trich dan
+dung MITRE ATT&CK v18 va NIST SP 800-61r3; danh muc ID hop le nam tai
+`../_shared/mitre-nist-mapping.md`.
+
 ## When to Use
 
-Use this skill when at least one condition is true:
+- Bang chung Cedarpelta Build hoac Live Response Collection nam trong pham vi.
+- Cuoc dieu tra can kiem tra phu mo artefact rieng cua Cedarpelta, hunt theo gia thuyet, pivot, doi
+  chieu cheo bat buoc, xu ly gia han theo parser, danh gia do tin cay hoac kiem soat dong ho so.
+- Ben nhan ben duoi can ket qua Cedarpelta, su kien chuan hoa, khuyen nghi parser hoac doi chieu voi
+  ket qua khac va su kien timeline.
 
-- Cedarpelta Build or Live Response Collection evidence is in scope.
-- Evidence classification or inventory identifies one or more items collected by Cedarpelta or an equivalent live response collector.
-- The investigation needs Cedarpelta-specific artifact coverage review, hypothesis-driven hunting, pivoting, mandatory cross-checking, parser-scoped processing, confidence assessment, follow-up actions, or closure control.
-- A downstream consumer needs Cedarpelta findings, normalized events, unresolved limitations, parser recommendations, or closure signals.
-- A conclusion cannot be trusted until Cedarpelta evidence has been reconciled with other findings, timeline events, report conclusions, or human investigator notes.
-
-Do not use this skill as the primary methodology for SIEM-only, firewall-only, VPN-only, email-only, malware reverse engineering, or generic report-writing tasks unless Cedarpelta evidence is part of the scope. Use it only for the Cedarpelta-specific analysis or reconciliation portion.
+Khong dung lam phuong phap chinh cho cong viec chi co SIEM, firewall, VPN, email, malware reverse
+engineering hoac viet bao cao chung.
 
 ## Prerequisites
 
-Required inputs, independent of folder structure:
+Dieu kien bat buoc:
 
-```text
-analysis request or tasking instruction
-Cedarpelta evidence inventory or evidence list
-Cedarpelta raw evidence location
-artifact classification or collection manifest
-parser recommendation matrix or parser plan
-approved investigation scope
+- analysis request hoac tasking instruction.
+- Cedarpelta evidence inventory hoac evidence list.
+- Cedarpelta raw evidence location.
+- artifact classification hoac collection manifest.
+- parser recommendation matrix hoac parser plan.
+- approved investigation scope.
+
+Dieu kien van hanh va dieu kien doi chieu khong bat buoc: xem
+[prerequisites contract](references/prerequisites-contract.md).
+
+**STOP rule:** Neu thieu mot dieu kien bat buoc o tren, dung tai buoc do, khong phan tich tiep. Tra
+`insufficient_evidence` va liet ke artefact con thieu theo Rules dong 1-2. Khong du doan khi thieu yeu
+cau dieu tra, inventory, parser plan, raw evidence location hoac approved scope.
+
+## Execution Steps
+
+Luon tai va lam theo [SOP Cedarpelta](references/cedarpelta_analysis_sop.md) cho trinh tu dieu tra va
+thu tu buoc.
+
+1. **Xac dinh pham vi bang chung** - ghi evidence root, package thu thap, pham vi duoc giao, phan lo tru.
+2. **Baseline host truoc phan tich** - ghi nen tang may chu; chi la buoc dinh huong, khong ket luan.
+3. **Kiem tra do phu artefact** - doi chieu duong dan output voi
+   [artifact map](references/cedarpelta_collection_artifact_map.md), gan trang thai tung nhom.
+4. **Kiem tra readiness cong cu** - xac nhan co tool/parser cho tung ho so artefact; khong parse.
+5. **Xay dung gia thuyet** - trang thai theo [hypothesis lifecycle](references/hypothesis_lifecycle.md); chi
+   sang `resolved` khi da kiem tra nhom artefact, da doi chieu cheo, da ghi limitation, da co follow-up.
+6. **Chon kich ban hunt** - danh gia [hunting scenarios](references/hunting_scenarios.md), ghi evidence da
+   kiem tra, evidence con thieu va do tin cay.
+7. **Quyet dinh parser** - chi parse theo scope/gia thuyet, theo
+   [parser policy](references/parser_policy.md) va
+   [parser matrix](schemas/parser_recommendation_matrix.json).
+8. **Doi chieu cheo bat buoc** - khong dong scenario tren mot nguon artefact duy nhat; xem
+   [cross-check rules](references/cross_check_rules.md).
+9. **Pivot** - moi seed event hoac finding tao pivot chain theo
+   [pivot workflow](references/pivot_workflow.md), kem pre/during/post-event.
+10. **Ghi finding** - giu do tin cay, evidence refs, affected entities, timeline refs, limitation va hanh
+    dong de xuat.
+11. **Sinh follow-up action** - moi muc chua giai quyet co action; gan `blocks_closure` khi viec do co the
+    lam doi ket luan vu an.
+12. **Quyet dinh dong ho so** - kiem tra dieu kien chan trong [bang nguong](references/thresholds.md).
+
+Ghi ket qua sau moi buoc vao case file theo
+[mau bao cao theo buoc](references/cedarpelta_stepwise_report_template.md); kiem tra dau ra bang
+`schemas/`.
+
+## Expected Output
+
+1. **Bao cao** (markdown): tom tat, finding, limitation, follow-up action va ly do dong ho so. Muc phan cap
+   P1-P4 lay theo `../_shared/severity-and-escalation.md`.
+2. **JSON** (fenced, mau minh hoa):
+
+```json
+{
+  "skill": "dfir-cedarpelta-analysis",
+  "status": "ok",
+  "scope": {},
+  "summary": {},
+  "findings": [],
+  "indicators": [],
+  "severity": "P4",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": []
+}
 ```
 
-Required conditions:
+- Case output phai bo sung `case_id`, `artifact_coverage`, `hunting_scenarios`, `hypotheses`,
+  `pivot_chains`, `missing_or_unparsed_evidence`, `follow_up_action_items`, `supervisor_verification`,
+  `confidence` va kiem tra duoc theo
+  [schema findings](schemas/cedarpelta_findings.schema.json).
+- `status` la `ok` hoac `insufficient_evidence`; khi `insufficient_evidence`, dien `missing_artifacts` va
+  khong ket luan ve hanh vi.
+- `confidence` chi nhan `high`, `medium`, `low` theo [bang nguong](references/thresholds.md).
+- `recommended_actions` chi de xuat; khong chay lenh khoa, xoa, vo hieu key hay tat tinh nang khi chua co
+  xac nhan ro rang cua nguoi dung (Rules dong 6).
 
-- Cedarpelta evidence is identified by inventory, classification, collection metadata, file naming, or investigator decision.
-- Original evidence is read-only.
-- A private working area exists for notes, queries, parser commands, and exploratory parsed subsets.
-- A stable output area exists for findings, summaries, normalized events, and downstream handoff artifacts.
-- Parser actions are scoped by hypothesis, artifact group, user, host, time window, Event ID, IOC, or pivot seed.
-- Parser recommendations use normalized complexity values: `direct_ingest`, `light`, `specialized`, or `skip`.
-- Output validation schemas are available from the active repository, bundled skill schemas, or the receiving system contract.
+## References
 
-Useful but optional reconciliation inputs:
-
-```text
-intake notes
-initial scope
-triage result
-previous findings
-timeline artifacts
-preliminary or final report drafts
-known benign assets or allowlists
-organization capability or logging profile
-```
-
-Return blocked instead of guessing when the analysis request, evidence inventory, parser plan, raw evidence location, or approved scope is missing.
-
-## Operating Principle
-
-Do not behave like a simple artifact parser. Use a hypothesis-driven DFIR loop:
-
-```text
-Evidence -> Hypothesis -> Cross-check -> Pivot -> Finding -> Limitation -> Follow-up -> Closure decision
-```
-
-Never conclude that a case is clean only because one artifact source is clean. Missing evidence reduces confidence unless it is explicitly not applicable.
-
-## Methodology References
-
-Load `references/cedarpelta_analysis_sop.md` before deep analysis. It defines the standard operating procedure for investigating Cedarpelta evidence, including investigation flow, artifact coverage review, hunting scenarios, hypothesis lifecycle, mandatory cross-checks, pivot workflow, parser decision logic, finding and confidence criteria, follow-up action requirements, and closure control rules.
-
-Load focused references as needed:
-
-- `references/cedarpelta_collection_artifact_map.md`: map Cedarpelta collection output paths to artifact families, baseline meaning, parser class, and coverage notes. Load this before artifact coverage review to avoid missing collected data types.
-- `references/cedarpelta_stepwise_report_template.md`: working report template for recording each completed SOP step or task flow as it finishes.
-- `references/investigator_tool_readiness.md`: workstation readiness guide mapping artifact types to required parsers/tools and fallback actions. Load this after artifact coverage review and before parser-heavy processing.
-- `references/artifact_groups.md`: artifact coverage groups and coverage notes.
-- `references/hunting_scenarios.md`: scenario IDs, statuses, and evidence expectations.
-- `references/hypothesis_lifecycle.md`: hypothesis states and transition rules.
-- `references/cross_check_rules.md`: mandatory independent artifact checks.
-- `references/pivot_workflow.md`: seed types, pivot windows, and pivot-chain documentation.
-- `references/parser_policy.md`: scoped parser selection and parser output handling.
-
-Use bundled schemas in `schemas/` when validating local Cedarpelta outputs or when the case repository schema is unavailable.
-
-## SOP Authority
-
-Always load and follow `references/cedarpelta_analysis_sop.md` for investigation flow and step order.
-
-Use focused reference documents only for supporting details such as artifact expectations, scenarios, hypotheses, cross-checks, pivots, parser policy, and output contracts.
-
-When in doubt, follow the SOP first.
+- [SOP Cedarpelta Analysis](references/cedarpelta_analysis_sop.md) - trinh tu dieu tra va quy tac dong ho so.
+- [Prerequisites contract](references/prerequisites-contract.md) - dieu kien van hanh va dieu kien doi chieu.
+- [Collection artifact map](references/cedarpelta_collection_artifact_map.md) - do phu artefact.
+- [Stepwise report template](references/cedarpelta_stepwise_report_template.md) - mau ghi ket qua theo buoc.
+- [Investigator tool readiness](references/investigator_tool_readiness.md) va
+  [artifact groups](references/artifact_groups.md) - tool, fallback, nhom artefact.
+- [Hunting scenarios](references/hunting_scenarios.md) - kich ban hunt.
+- [Hypothesis lifecycle](references/hypothesis_lifecycle.md) - trang thai gia thuyet.
+- [Cross-check rules](references/cross_check_rules.md) - doi chieu cheo bat buoc.
+- [Pivot workflow](references/pivot_workflow.md) - seed va khung pivot.
+- [Parser policy](references/parser_policy.md) - chon parser theo pham vi.
+- [Bang nguong](references/thresholds.md) - khung pivot, do tin cay, dieu kien dong ho so.
+- `schemas/` - schema findings, normalized event, timeline event, follow-up action, parser matrix.
+- `../_shared/severity-and-escalation.md` - phan cap P1-P4; `../_shared/compliance-vietnam.md` - moc thoi
+  gian phap ly; `../_shared/mitre-nist-mapping.md` - danh muc MITRE ATT&CK v18 va NIST CSF 2.0 hop le.
 
 ## Rules (bat buoc)
 

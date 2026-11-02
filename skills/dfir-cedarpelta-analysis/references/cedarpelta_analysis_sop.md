@@ -393,14 +393,8 @@ domain
 url
 ```
 
-Default pivot windows:
-
-```text
-login_rdp: -24h to +24h
-process_execution: -4h to +24h
-persistence: -7d to +24h
-data_staging_exfiltration: -24h to +24h
-```
+Default pivot windows are listed in `references/thresholds.md` (single source of truth) and
+restated in `references/pivot_workflow.md`.
 
 For each pivot chain, evaluate:
 
@@ -465,6 +459,7 @@ medium
 low
 ```
 
+Criteria per level are defined in `references/thresholds.md` (single source of truth).
 Guidance:
 
 ```text
@@ -501,7 +496,8 @@ blocks_closure = true
 
 ## 12. Closure Control
 
-Closure is not allowed when:
+Closure conditions are listed in `references/thresholds.md` (single source of truth). Closure is not
+allowed when:
 
 * any material hypothesis remains open without follow-up;
 * required cross-check was not performed;

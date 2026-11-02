@@ -11,7 +11,7 @@
 │  Skill: playbook-master-incident-triage                                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  Vai trò: Entry Point - Tiếp nhận yêu cầu giám sát                          │
-│  Input: Danh sách watchlist từ HR (334 nhân sự nghỉ việc)                   │
+│  Input: Danh sách watchlist từ HR (334 nhân sự nghỉ việp)                   │
 │  Output: Phân loại → Route sang Tier 2 Playbook                             │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
@@ -31,7 +31,7 @@
                                       │
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  TIER 3: TECHNICAL SKILLS (Kỹ năng Kỹ thuật & Công cụ)                      │
+│  TIER 3: TECHNICAL SKILLS (Kỹ năng kỹ thuật & Công cụ)                      │
 │  Skills: analyzing-ueba-alerts-varonis, analyzing-email-audit-logs, ...     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  Vai trò: Công cụ phân tích chuyên sâu                                      │
@@ -53,9 +53,12 @@
 INVESTIGATION WINDOW = {
   start_date: Ngày nộp đơn nghỉ việc (Ngày nộp đơn),
   end_date: Ngày nghỉ thực tế (Ngày nghỉ dự kiến theo Đơn),
-  buffer: +30 ngày sau ngày nghỉ thực tế (để phát hiện late-stage exfiltration)
+  buffer: theo bảng ngưỡng (references/thresholds.md)
 }
 ```
+
+> Quy tắc buffer và phân loại window nằm trong `references/thresholds.md`.
+> Không tự đặt mốc mới khi không có bảng chứng.
 
 ### Cột quan trọng từ Watchlist
 
@@ -69,19 +72,23 @@ INVESTIGATION WINDOW = {
 
 | Loại | Thời gian giữa nộp đơn và nghỉ | Mức độ rủi ro | Action |
 |------|--------------------------------|---------------|--------|
-| **Ngắn hạn** | < 7 ngày | 🔴 Cao nhất | Giám sát ngay, escalate nhanh |
-| **Trung hạn** | 7-30 ngày | 🟠 Cao | Giám sát hàng ngày |
-| **Dài hạn** | > 30 ngày | 🟡 Trung bình | Giám sát hàng tuần |
+| **Ngắn hạn** | < 7 ngày | Cao nhất | Giám sát ngay, escalate nhanh |
+| **Trung hạn** | 7-30 ngày | Cao | Giám sát hàng ngày |
+| **Dài hạn** | > 30 ngày | Trung bình | Giám sát hàng tuần |
 
 ### Áp dụng cho Case Study
 
-| User | Ngày nộp đơn | Ngày nghỉ | Window (ngày) | Loại | Ưu tiên |
-|------|-------------|-----------|---------------|------|---------|
-| Nguyễn Thị Diễm Hằng | 2025-12-29 | 2026-01-01 | 3 | Ngắn hạn | 🔴 P1 |
-| Trần Thị Ngọc Châu | 2025-12-30 | 2026-01-02 | 3 | Ngắn hạn | 🔴 P1 |
-| Lê Đình Văn | 2025-12-31 | 2026-01-09 | 9 | Trung hạn | 🟠 P2 |
-| Trần Quang Quốc | 2026-01-05 | 2026-01-05 | 0 | Ngay lập tức | 🔴 P1 |
-| Phan Minh Luân | 2026-01-05 | 2026-02-01 | 27 | Trung hạn | 🟠 P2 |
+| User | Ngày nộp đơn | Ngày nghỉ | Window (ngày) | Loại | Mức độ rủi ro window |
+|------|-------------|-----------|----------------|------|---------|
+| Nguyễn Thị Diễm Hằng | 2025-12-29 | 2026-01-01 | 3 | Ngắn hạn | Cao |
+| Trần Thị Ngọc Châu | 2025-12-30 | 2026-01-02 | 3 | Ngắn hạn | Cao |
+| Lê Đình Văn | 2025-12-31 | 2026-01-09 | 9 | Trung hạn | Cao |
+| Trần Quang Quốc | 2026-01-05 | 2026-01-05 | 0 | Ngay lập tức | Cao |
+| Phan Minh Luân | 2026-01-05 | 2026-02-01 | 27 | Trung hạn | Trung bình |
+
+> Mức độ rủi ro theo window KHÔNG phải mức phân cấp P1-P4. Mức phân cấp do
+> `../_shared/severity-and-escalation.md` quyết định; review nhân sự sắp nghỉ việp có
+> quyền dữ liệu nhạy là P2.
 
 ---
 
@@ -92,7 +99,7 @@ INVESTIGATION WINDOW = {
 **Thông tin từ HR:**
 - Ngày nộp đơn: 2026-01-06
 - Ngày nghỉ dự kiến: 2026-01-31
-- Investigation window: 2026-01-06 → 2026-01-31 (+30 ngày buffer)
+- Investigation window: 2026-01-06 → 2026-01-31 (+ buffer theo quy tắc)
 
 ### Bước 1: Tier 1 - Master Triage
 
@@ -100,15 +107,15 @@ INVESTIGATION WINDOW = {
 INPUT: Watchlist từ HR
 PROCESS:
   ├── Đánh giá: Insider Threat - Pre-departure monitoring
-  ├── Severity: P2 (High) - Nhân sự có quyền truy cập dữ liệu nhạy cảm
-  ├── Investigation window: 2026-01-06 → 2026-02-28 (30 ngày buffer)
+  ├── Mức phân cấp: P2 (nhân sự có quyền truy cập dữ liệu nhạy cảm)
+  ├── Investigation window: 2026-01-06 → 2026-02-28 (buffer theo quy tắc)
   └── Route: playbook-daily-watchlist-monitoring (Tier 2)
 ```
 
 ### Bước 2: Tier 2 - Daily Watchlist Monitoring
 
 ```
-INPUT: 
+INPUT:
   ├── User: Ngan, Le Thi Kim
   ├── Investigation window: 2026-01-06 → 2026-02-28
   └── Varonis logs trong window
@@ -131,10 +138,13 @@ PROCESS:
       └── Fileserver: 658 events (folder delete detected)
 
 OUTPUT:
-  ├── Risk level: 🔴 CRITICAL
+  ├── Mức cảnh báo: CRITICAL
   ├── Red flags: Mass file delete, folder delete, off-hours activity
   └── Recommendation: Escalate to Tier 3 deep investigation
 ```
+
+> Mức cảnh báo CRITICAL/HIGH/MEDIUM/LOW là mức của playbook. Quy đổi sang P1-P4 theo
+> `../_shared/severity-and-escalation.md`.
 
 ### Bước 3: Tier 3 - Technical Analysis
 
@@ -168,13 +178,13 @@ OUTPUT (JSON):
 INPUT: Kết quả từ Tier 3
 
 PROCESS:
-  ├── Đánh giá: CRITICAL (risk score 24/28)
-  ├── Communication plan:
+  ├── Đánh giá: cảnh báo mức cao nhất trong nhóm (không hạ cấp)
+  ├── Communication plan (theo references/thresholds.md):
   │   ├── T+0: Notify SOC Lead
   │   ├── T+15 min: Notify CISO
   │   └── T+4 hours: HR + Legal meeting
   │
-  └── Containment recommendations:
+  └── Containment recommendations (chỉ đề xuất, không tự chạy):
       ├── Suspend user account
       ├── Revoke external email access
       └── Enhanced monitoring on fileserver
@@ -202,49 +212,55 @@ OUTPUT: Escalation report to CISO
 ## AUTOMATION PIPELINE (DAILY)
 
 ```
-08:00 - Nhận logs từ Varonis (AD, Email, Fileserver)
+Sáng (batch import)
         │
         ▼
-08:05 - Tier 1: Master Triage
-        ├── Nhận watchlist update từ HR
-        ├── Xác định investigation window cho mỗi user
-        └── Route sang Tier 2
+Tier 1: Master Triage
+├── Nhận watchlist update từ HR
+├── Xác định investigation window cho mỗi user
+└── Route sang Tier 2
         │
         ▼
-08:10 - Tier 2: Daily Watchlist Monitoring
-        ├── Chạy analyze_watchlist_playbook.py (AD + email + fileserver)
-        ├── Chạy score_watchlist_jev.py (mức luật là sàn, Jev chỉ nâng)
-        ├── Xem Logs/Tong_Hop_{batch}.md và báo cáo 3 phần
-        └── Merge outputs
+Tier 2: Daily Watchlist Monitoring
+├── Chạy analyze_watchlist_playbook.py (AD + email + fileserver)
+├── Chạy score_watchlist_jev.py (mức luật là sàn, Jev chỉ nâng)
+├── Xem Logs/Tong_Hop_{batch}.md và báo cáo 3 phần
+└── Merge outputs
         │
         ▼
-08:20 - Tier 3: Technical Analysis (gọi skills)
-        ├── analyzing-ueba-alerts-varonis
-        ├── analyzing-email-audit-logs
-        └── analyzing-dlp-alerts
+Tier 3: Technical Analysis (gọi skills)
+├── analyzing-ueba-alerts-varonis
+├── analyzing-email-audit-logs
+└── analyzing-dlp-alerts
         │
         ▼
-08:30 - Tier 2: Tổng hợp & Báo cáo
-        ├── Cross-source correlation
-        ├── Risk classification
-        ├── Generate daily report
-        └── Escalate nếu có CRITICAL
+Tier 2: Tổng hợp & Báo cáo
+├── Cross-source correlation
+├── Phân loại rủi ro
+├── Generate daily report
+└── Escalate nếu có cảnh báo mức cao
         │
         ▼
-09:00 - Gửi báo cáo cho SOC Lead
+Gửi báo cáo cho SOC Lead
 ```
+
+> Khung giờ của pipeline phụ thuộc lịch batch import và điều kiện vận hành của
+> `../_shared/off-hours-and-baseline.md`; không gán giờ cụ thể cho phân tích ngoài giờ.
 
 ---
 
 ## COMPLIANCE MAPPING
 
-| Requirement | Regulation | How We Address |
-|-------------|------------|----------------|
-| Log retention | Luật An ninh mạng | Varonis logs retained 90 days |
-| PII protection | NĐ 13/2023, NĐ 356/2025 | Sensitive file keyword monitoring |
-| Breach notification | NĐ 356/2025 (72 hours) | Tier 2 escalation within 72 hours |
-| Financial data protection | NHNN Circulars | Fileserver monitoring for financial folders |
-| Access monitoring | NHNN Circulars | AD authentication monitoring |
+> Mốc thời gian pháp lý: xem `../_shared/compliance-vietnam.md` (nguồn sự thật duy nhất).
+> Không ghi lại số giờ/ngày hạn chót cụ thể trong file này.
+
+| Requirement | Nguồn | Cách xử lý trong playbook |
+|-------------|-------|---------------------------|
+| Lưu giữ log | `../_shared/compliance-vietnam.md` | Giữ log Varonis và đối chiếu với nguồn log gốc |
+| Bảo vệ dữ liệu cá nhân | `../_shared/compliance-vietnam.md` | Giám sát truy cập file nhạy theo từ khóa |
+| Thông báo vi phạm | `../_shared/compliance-vietnam.md` | Phân cấp P1-P4 theo `../_shared/severity-and-escalation.md` và checklist công bố việc |
+| Bảo vệ dữ liệu tài chính | `../_shared/compliance-vietnam.md` | Giám sát fileserver cho thư mục dữ liệu tài chính |
+| Giám sát truy cập | `../_shared/compliance-vietnam.md` | Giám sát xác thực AD |
 
 ---
 
@@ -260,7 +276,7 @@ Timeline cho User "Ngan, Le Thi Kim":
     │                   │                   │
   Nộp đơn           Nghỉ việc         Hết buffer
                     (Last day)
-                    
+
 Focus: Giám sát chặt trong window
        Tiếp tục monitor trong buffer
        Escalate nếu phát hiện bất thường
