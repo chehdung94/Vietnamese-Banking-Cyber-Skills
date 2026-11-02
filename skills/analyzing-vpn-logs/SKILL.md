@@ -1,6 +1,6 @@
 ---
 name: analyzing-vpn-logs
-description: "Analyze VPN concentrator logs from ASA, FortiGate, Palo Alto, Pulse Secure, or Azure VPN Gateway for credential abuse, brute force, and anomalous sessions. Use when a VPN CSV export or syslog set is provided."
+description: "Analyze VPN concentrator logs from Cisco ASA, FortiGate, Palo Alto, Pulse Secure, or Azure VPN Gateway for credential abuse, brute force, off-hours access, and anomalous sessions. Use when a VPN export (CSV, CEF, syslog, JSON) is provided for an investigation scope. Not for full-tunnel traffic inspection, firewall rule review, or endpoint forensics."
 allowed-tools:
   - Read
   - Grep
@@ -8,396 +8,143 @@ allowed-tools:
   - Bash
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
 domain: cybersecurity
 subdomain: network-security
-mitre_attack: [T1133, T1021, T1078, T1059.001]
-nist_csf: [DE.CM-1, DE.AE-1, PR.AA-01, PR.AA-06]
+mitre_attack: [T1133, T1021.001, T1078, T1110]
+nist_csf: [DE.CM-1, DE.CM-3, DE.AE-1, PR.AA-01, PR.AA-06]
 tags:
-  - [vpn
+  - vpn
   - ssl-vpn
-  - network-access
   - remote-access
+  - network-security
   - connection-analysis
-  - firewall-logs
-  - incident-response
-  - insider-threat]
+  - insider-threat
 metadata:
   owner: security-skills-team
   tier: 3
   source: local
 ---
 
-# Analyzing VPN Logs
+# Phân tích VPN Logs
 
 ## Overview
 
-VPN log analysis is critical for detecting unauthorized remote access, compromised credentials, and anomalous connection patterns that may indicate insider threats or external attacks. This skill provides a structured procedure for analyzing VPN logs from various vendors (Cisco ASA, Fortinet FortiGate, Palo Alto, Pulse Secure, Microsoft Azure VPN Gateway) to identify suspicious activities and generate actionable investigation reports.
+Phân tích log VPN concentrator (Cisco ASA, FortiGate, Palo Alto, Pulse Secure, Azure VPN Gateway) để phát hiện truy cập trái phép, lạm dụng thông tin đăng nhập, hành vi ngoài giờ và phiên bất thường.
+
+Ngưỡng phát hiện, SOP chi tiết và mẫu báo cáo nằm ở `references/`. SKILL.md chỉ giữ phần điều hướng.
+
+> Mốc thời gian pháp lý: xem `../_shared/compliance-vietnam.md` (nguồn sự thật duy nhất).
 
 ## When to Use
 
-- When investigating remote access incidents
-- When responding to unauthorized access alerts
-- When conducting proactive monitoring for suspicious VPN activity
-- When analyzing connections from external IPs to corporate network
-- When investigating departing employee cases (insider risk)
-- When correlating VPN logs with other security events (device control, endpoint)
-- When preparing incident investigation reports for compliance
-
-## Pre-Analysis Value Assessment 🆕
-
-> **⚠️ BẮT BUỘC:** Trả lời các câu hỏi sau TRƯỚC KHI phân tích VPN logs. Nếu ≥2 câu trả lời là "Không" → cân nhắc SKIP và ghi rõ lý do.
-
-| # | Câu hỏi | Yes/No |
-|---|---|---|
-| 1 | VPN logs có sẵn cho TẤT CẢ users trong scope không? | |
-| 2 | Có policy VPN off-hours chính thức không? | |
-| 3 | Có thể đối chiếu VPN IP với IP nội bộ của user không? | |
-| 4 | Case có liên quan đến remote access hoặc location-based anomaly không? | |
-| 5 | Có timeline correlation giữa VPN events và events từ nguồn log khác không? | |
-
-**Nếu SKIP:** Ghi vào báo cáo: "VPN analysis was skipped because [lý do]. VPN logs available at [path] for future reference if needed."
+- Điều tra sự cố truy cập từ xa: mất quyền truy cập, tài khoản bị khóa, kết nối lạ.
+- Ứng cứu cảnh báo truy cập không được phép.
+- Theo dõi định kỳ hoạt động VPN để tìm mẫu bất thường.
+- Rà soát nhân sự sắp nghỉ việc, điều tra truy cập ngoài giờ, chuẩn bị hồ sơ tuân thủ (xem các playbook liên kết bên dưới).
 
 ## Prerequisites
 
-- Access to VPN logs (firewall, SSL VPN, NAC logs)
-- Log data in supported formats: CSV, CEF, Syslog, JSON
-- Knowledge of VPN infrastructure and expected connection patterns
-- List of target users/IPs to investigate
-- Understanding of corporate network topology (internal IP ranges)
+- File log VPN (firewall / SSL VPN / NAC) dạng CSV, CEF, Syslog hoặc JSON trong phạm vi điều tra.
+- Danh sách user hoặc IP mục tiêu, kèm phạm vi thời gian.
+- Hiểu biết hạ tầng VPN và dải IP nội bộ của tổ chức (`references/banking-context.md`).
+- Baseline kết nối của từng user hoặc file baseline đã export.
+- Quy tắc giờ làm việc, ngoài giờ, múi giờ theo nguồn log: `../_shared/off-hours-and-baseline.md`.
+- Danh sách phê duyệt làm việc ngoài giờ và dịch vụ đồng bộ đã xác nhận (nếu có).
 
-## Steps
+**STOP rule:** Nếu thiếu một điều kiện bắt buộc ở trên, dừng tại bước đó, không phân tích tiếp. Trả `insufficient_evidence` và liệt kê artefact còn thiếu theo Rules dòng 1-2.
 
-### Step 1 – Identify and Locate VPN Log Sources
+## Execution Steps
 
-First, identify available VPN log files in the workspace:
+### Step 0 - Kiểm tra phạm vi
 
-**Common VPN log locations:**
-```
-Logs/*VPN*.csv
-Logs/*vpn*.csv
-Logs/*ssl*.csv
-Logs/*FortiGate*.csv
-Logs/*ASA*.csv
-Logs/*PaloAlto*.csv
-```
+Trả lời 5 câu hỏi đánh giá phạm vi trong `references/scope-assessment.md`. Nếu phần lớn câu trả lời là "không", ghi rõ lý do và phạm vi thực tế có thể phân tích, không tự bỏ qua case.
 
-**Dùng Glob để liệt kê file log trong thư mục Logs:**
-```bash
-Glob("**/Logs/*.csv")
-```
+### Step 1 - Tìm và xác thực nguồn log
 
-### Step 2 – Parse and Validate VPN Log Structure
+Dùng `Glob` liệt kê file log, sau đó kiểm tra: file đọc được, tổng số dòng, khoảng thời gian, lỗi chất lượng dữ liệu. Cột dữ liệu và cách export: `references/collection-and-sources.md`.
 
-Read the VPN log file and identify column structure:
+### Step 2 - Tính thống kê cơ bản
 
-**Common VPN log columns:**
-| Column | Description |
-|--------|-------------|
-| Date/Time | Timestamp of event |
-| Level | Log level (information, warning, error) |
-| Action | Event type (tunnel-up, tunnel-down, auth-failed, etc.) |
-| Status | Connection status |
-| Message | Detailed message |
-| VPN Tunnel | Tunnel identifier |
-| User | Username |
-| Remote IP | External IP address |
-| Tunnel IP | Internal VPN IP address |
-| Source Port | Source port for connection |
-| Protocol | Protocol used (SSL, IPSec) |
+Tổng số dòng, số user, số IP nguồn, số IP tunnel, khoảng thời gian, và phân bố theo loại sự kiện (tunnel-up, tunnel-down, auth-success, auth-failed, disconnect). Chi tiết: `references/analysis-sop.md`.
 
-**Validate file:**
-- [ ] Confirm file is readable
-- [ ] Note total number of rows
-- [ ] Identify date range of logs
-- [ ] Check for data quality issues (missing values, encoding)
+### Step 3 - Lọc theo phạm vi điều tra
 
-### Step 3 – Calculate Basic Statistics
+Lọc theo IP mục tiêu, user mục tiêu, khoảng thời gian. Ghi rõ bộ lọc đã dùng để mọi kết luận có thể tái lập.
 
-Calculate key metrics from VPN logs:
+### Step 4 - Phân tích mẫu kết nối
 
-#### 3.1 Total Connection Statistics
+- Thời gian: kết nối sớm nhất, muộn nhất, thời lượng phiên trung bình, số kết nối ngoài giờ, cuối tuần, ngày lễ.
+- Mạng và địa lý: toàn bộ IP nguồn, IP trùng lặp, dải trong nước/ngoài nước, thay đổi IP giữa phiên.
+- Phiên: thời lượng từng phiên, phiên dài, nhiều phiên đồng thời, tần suất kết nối.
 
-```
-Total Rows: [number]
-Unique Users: [number]
-Unique Remote IPs: [number]
-Unique Tunnel IPs: [number]
-Date Range: [start_date] to [end_date]
-```
+### Step 5 - Phát hiện bất thường
 
-#### 3.2 Connection Events Summary
+Áp dụng **đúng** bảng ngưỡng `references/thresholds.md`: xác thực thất bại, nhiều IP, kết nối ngoài giờ, phiên dài, phiên đồng thời, impossible travel, kết nối ngay sau khi khoá tài khoản. Không tự đặt thêm ngưỡng.
 
-| Event Type | Count | Description |
-|------------|-------|-------------|
-| tunnel-up | X | Successful connection established |
-| tunnel-down | X | Connection terminated |
-| tunnel-stats | X | Tunnel statistics/keepalive |
-| auth-success | X | Authentication successful |
-| auth-failed | X | Authentication failed |
-| disconnect | X | Forced disconnection |
+### Step 6 - Phân tích chi tiết sự kiện đáng ngờ
 
-#### 3.3 User Connection Summary
+Trích xuất: loại sự kiện, thời điểm, user, IP nguồn, IP tunnel, trạng thái. Phân biệt rõ kết luận có bằng chứng, giả thuyết, và cần thêm dữ liệu.
 
-| User | Total Events | Unique IPs | First Connection | Last Connection |
-|------|--------------|------------|-----------------|-----------------|
-| user1 | X | X | datetime | datetime |
-| user2 | X | X | datetime | datetime |
+### Step 7 - Trích xuất IOC và dựng timeline
 
-### Step 4 – Filter and Focus Analysis
+IOC: IP nguồn, IP tunnel, user, dải mạng, địa chỉ endpoint. Timeline sắp theo thời gian đã chuẩn hoá. Mẫu báo cáo: `references/output-example.md`.
 
-Filter logs based on investigation context:
+### Step 8 - Phân cấp và đề xuất hành động
 
-**For specific IP investigation:**
-```
-Filter: Remote IP = [target_ip]
-Example: Remote IP = 116.111.184.100
-```
-
-**For specific user investigation:**
-```
-Filter: User = [target_username]
-Example: User = luannt0500
-```
-
-**For specific date range:**
-```
-Filter: Date between [start_date] and [end_date]
-Example: 2026-04-20 to 2026-04-29
-```
-
-### Step 5 – Analyze Connection Patterns
-
-For each target user/IP, analyze:
-
-#### 5.1 Connection Timing
-
-| Metric | Value |
-|--------|-------|
-| Earliest connection | yyyy-mm-dd HH:MM |
-| Latest connection | yyyy-mm-dd HH:MM |
-| Average session duration | X hours |
-| Connections during off-hours | Y |
-| Weekend/holiday connections | Z |
-
-**Off-hours definition:**
-- Before 07:00 or after 18:00 on weekdays
-- Any time on weekends/holidays
-
-#### 5.2 Geographic/Network Analysis
-
-- [ ] Identify all unique source IPs
-- [ ] Check IP reputation (if available)
-- [ ] Identify IP ranges (domestic vs. foreign)
-- [ ] Note any IP changes during session
-
-#### 5.3 Session Analysis
-
-- [ ] Calculate session duration per connection
-- [ ] Identify long-lived sessions (>8 hours)
-- [ ] Identify multiple concurrent sessions
-- [ ] Note connection frequency patterns
-
-### Step 6 – Identify Anomalies and Suspicious Events
-
-Flag suspicious patterns:
-
-#### 6.1 High-Risk Indicators
-
-| Indicator | Threshold | Severity |
-|-----------|-----------|----------|
-| Failed authentication attempts | ≥5 failures | High |
-| Multiple IP addresses | ≥3 different IPs | Medium |
-| Off-hours connections | Any | Medium |
-| Long sessions | >8 hours | Medium |
-| Multiple concurrent sessions | ≥2 | High |
-| Impossible travel | Different IPs <1 hour | Critical |
-| First connection after termination | Any | Critical |
-
-#### 6.2 Anomaly Detection Queries
-
-**Failed Auth Analysis:**
-```
-Search: auth-failed
-Group by: User, Remote IP
-Flag: ≥5 failures per user/IP
-```
-
-**Multiple IP Analysis:**
-```
-Search: All events for user
-Unique: Remote IP
-Flag: ≥3 unique IPs
-```
-
-**Off-Hours Analysis:**
-```
-Filter: Hour < 7 OR Hour > 18 OR DayOfWeek in (0,6)
-Flag: Any off-hours connection
-```
-
-#### 6.3 Detailed Off-Hours Analysis Procedure
-
-**Off-Hours Definition:**
-- Before 08:00 or after 18:00 on weekdays
-- Any time on weekends/holidays
-
-**Analysis Steps:**
-
-1. **Extract ALL tunnel-up events with timestamps:**
-   ```
-   Search pattern: tunnel-up
-   Extract: Date/Time, User, Remote IP, Tunnel IP
-   ```
-
-2. **Identify off-hours connections:**
-   - Filter where Hour < 8 OR Hour >= 18
-   - Check DayOfWeek (0=Sunday, 6=Saturday)
-
-3. **For each off-hours event, record:**
-   | Date | Time | Event | Remote IP | Duration | Assessment |
-   |------|------|-------|-----------|----------|------------|
-   | yyyy/mm/dd | HH:MM | tunnel-up | x.x.x.x | X min | Normal/Suspicious |
-
-4. **Risk Assessment for Off-Hours:**
-   | Pattern | Risk Level | Action Required |
-   |---------|------------|-----------------|
-   | Occasional late night (1-2x/month) | Low | Document |
-   | Regular after-hours | Medium | Investigate pattern |
-   | Short sessions (<5 min) off-hours | Medium-High | High priority investigate |
-   | Just before/after resignation date | Critical | Immediate investigation |
-
-5. **Common Suspicious Off-Hours Patterns:**
-   - Quick connect/disconnect (<5 min) - possible data access
-   - Multiple short sessions in off-hours
-   - Connection right before termination
-   - Early morning access (before 6 AM)
-
-### Step 7 – Detailed Event Analysis
-
-For suspicious events, extract detailed information:
-
-```
-Event: tunnel-up
-Timestamp: YYYY-MM-DD HH:MM:SS
-User: [username]
-Remote IP: [external_ip]
-Tunnel IP: [internal_ip]
-Status: [success/failure]
-Details: [any additional info]
-```
-
-### Step 8 – Generate Investigation Report
-
-Structure findings as JSON:
-
-```json
-{
-  "investigation_id": "VPN-YYYYMMDD-XXX",
-  "analyst": "analyst-name",
-  "date": "YYYY-MM-DD",
-  "target": {
-    "type": "ip|user|both",
-    "ip": "target_ip",
-    "user": "target_username"
-  },
-  "log_summary": {
-    "total_rows": 0,
-    "date_range": {
-      "start": "YYYY-MM-DD",
-      "end": "YYYY-MM-DD"
-    },
-    "unique_users": 0,
-    "unique_remote_ips": 0,
-    "unique_tunnel_ips": 0
-  },
-  "connection_events": {
-    "tunnel_up": 0,
-    "tunnel_down": 0,
-    "auth_success": 0,
-    "auth_failed": 0,
-    "disconnect": 0
-  },
-  "user_analysis": [
-    {
-      "user": "username",
-      "total_connections": 0,
-      "unique_remote_ips": 0,
-      "first_connection": "YYYY-MM-DD HH:MM",
-      "last_connection": "YYYY-MM-DD HH:MM",
-      "total_session_time": "X hours",
-      "off_hours_connections": 0,
-      "failed_auth_attempts": 0,
-      "risk_level": "Low|Medium|High|Critical"
-    }
-  ],
-  "anomalies_detected": [
-    {
-      "type": "anomaly_type",
-      "severity": "Low|Medium|High|Critical",
-      "description": "Description",
-      "timestamp": "YYYY-MM-DD HH:MM",
-      "user": "username",
-      "details": {}
-    }
-  ],
-  "ioc_list": [
-    {
-      "type": "ip|user|session",
-      "value": "indicator",
-      "context": "related event"
-    }
-  ],
-  "recommended_actions": [
-    {
-      "action": "Description",
-      "owner": "Role/Team",
-      "priority": "P1|P2|P3",
-      "due_date": "YYYY-MM-DD"
-    }
-  ]
-}
-```
+Phân cấp P1-P4 theo `../_shared/severity-and-escalation.md`, nêu rõ điều kiện đã chứng minh. Hành động khắc phục **chỉ được đề xuất** (Rules dòng 6).
 
 ## Expected Output
 
-1. **Executive Summary** – High-priority findings for management
-2. **Connection Statistics Table** – All users/IPs with connection metrics
-3. **Anomaly Summary** – List of suspicious events ranked by severity
-4. **IOC List** – Indicators for blocking/monitoring
-5. **Timeline of Events** – Chronological connection map
-6. **Recommended Actions** – Prioritized remediation steps
+1. **Báo cáo** (markdown): tóm tắt, thống kê kết nối, bất thường xếp theo mức, IOC, timeline, hành động đề xuất, giới hạn dữ liệu.
+2. **JSON** (fenced, mẫu minh hoạ):
 
-## Vietnamese Banking Context
-
-When analyzing VPN logs in Vietnamese banking environment:
-
-- **Data Classification**: Customer PII, Financial records, Account data
-- **Regulatory Reference**: 
-  - Nghị định 356/2025/NĐ-CP (PDP) for personal data
-  - Luật An ninh mạng 2018
-  - NHNN Circular on IT Security for financial data
-- **Common VPN Scenarios**:
-  - Remote access to core banking systems
-  - Third-party vendor access
-  - Employee remote work connections
-  - Departing employee access after notice period
-
-### Internal IP Ranges (RFC 1918)
-
-| Range | Description |
-|-------|-------------|
-| 10.0.0.0/8 | Class A private |
-| 172.16.0.0/12 | Class B private |
-| 192.168.0.0/16 | Class C private |
-
-### Common VPN Tunnel IP Ranges
-
+```json
+{
+  "skill": "analyzing-vpn-logs",
+  "status": "ok",
+  "scope": {
+    "target_type": "ip|user|both",
+    "targets": [],
+    "time_range": {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"},
+    "log_source": ""
+  },
+  "summary": {"total_rows": 0, "unique_users": 0, "unique_remote_ips": 0, "unique_tunnel_ips": 0},
+  "connection_events": {"tunnel_up": 0, "tunnel_down": 0, "auth_success": 0, "auth_failed": 0},
+  "findings": [
+    {
+      "type": "",
+      "evidence": "",
+      "threshold_applied": "",
+      "conclusion": "evidence|assumption|need_more_data"
+    }
+  ],
+  "indicators": {"ips": [], "tunnel_ips": [], "users": []},
+  "severity": "P4",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": []
+}
 ```
-172.16.0.0/12   # Common VPN pool
-10.10.0.0/16    # SSL VPN pool
-10.100.0.0/16   # Remote access
-```
+
+Ví dụ: `references/output-example.md`.
+
+## References
+
+- `references/thresholds.md` - bảng ngưỡng phát hiện (nguồn duy nhất).
+- `references/collection-and-sources.md` - tìm, export và xác thực log VPN.
+- `references/analysis-sop.md` - SOP thống kê, lọc, phân tích mẫu kết nối.
+- `references/scope-assessment.md` - 5 câu hỏi đánh giá phạm vi.
+- `references/output-example.md` - mẫu báo cáo và JSON đầy đủ.
+- `references/banking-context.md` - bối cảnh ngân hàng, dải IP nội bộ.
+- `references/checklist.md` - checklist tự kiểm trước khi bàn giao.
+- `../_shared/compliance-vietnam.md` - mốc thời gian pháp lý.
+- `../_shared/severity-and-escalation.md` - thang P1-P4 và mã leo thang.
+- `../_shared/off-hours-and-baseline.md` - giờ làm việc, múi giờ, cách tính baseline.
+- `../_shared/mitre-nist-mapping.md` - ID MITRE/NIST hợp lệ.
+- [`playbook-pre-departure-insider-review`](../playbook-pre-departure-insider-review/SKILL.md)
+- [`playbook-after-hours-internal-access-investigation`](../playbook-after-hours-internal-access-investigation/SKILL.md)
+- [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md)
 
 ## Rules (bat buoc)
 
@@ -408,25 +155,3 @@ When analyzing VPN logs in Vietnamese banking environment:
 5. Nguong phat hien lay tu bang nguong trong skill hoac `references/thresholds.md`. Khong tu dat nguong moi.
 6. Lenh khac phuc (xoa, khoa, vo hieu key, tat tinh nang) chi duoc DE XUAT. Khong chay khi chua co xac nhan ro rang cua nguoi dung.
 7. Phan biet ro ba ket luan co bang chung, gia thuyet, va can them du lieu.
-
-## Validation Checklist
-
-- [ ] All target users/IPs analyzed
-- [ ] Connection statistics calculated
-- [ ] Session duration analyzed
-- [ ] Off-hours connections identified
-- [ ] Failed authentication analyzed
-- [ ] Multiple IP addresses flagged
-- [ ] Anomalies categorized by severity
-- [ ] IOC list formatted correctly
-- [ ] Recommended actions have owners and due dates
-- [ ] Report reviewed for accuracy
-
-## References
-
-- VPN vendor documentation (Cisco, Fortinet, Palo Alto)
-- MITRE ATT&CK Framework v14 - T1133 (External Remote Services)
-- NIST Cybersecurity Framework 2.0
-- RFC 1918 - Address Allocation for Private Internets
-- Vietnamese banking security regulations (NHNN)
-- Nghị định 356/2025/NĐ-CP về bảo vệ dữ liệu cá nhân
