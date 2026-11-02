@@ -1,6 +1,6 @@
 ---
 name: playbook-phishing-response
-description: "Respond to a suspected or confirmed phishing incident - collect email evidence, contain accounts, and notify stakeholders. Use when the user reports a suspicious email, a credential-harvesting page, or a confirmed phishing delivery. Triage and containment only, no malware reverse engineering."
+description: "Respond to a suspected or confirmed phishing incident by collecting email evidence, scoping delivery and clicks, and proposing containment. Use when a suspicious email, credential-harvesting page, or confirmed phishing delivery is reported. Not for malware reverse engineering, deep endpoint forensics, or non-email intrusion paths."
 allowed-tools:
   - Read
   - Grep
@@ -8,10 +8,11 @@ allowed-tools:
   - Bash
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
 domain: cybersecurity
 subdomain: incident-response
-mitre_attack: [T1566]
+mitre_attack: [T1204, T1110, T1078, T1048, T1567.002]
+nist_csf: [DE.CM-3, DE.AE-1, RS.MI-1, RS.RP-1]
 tags:
   - playbook
   - tier-2
@@ -28,102 +29,126 @@ metadata:
 # Playbook: Phishing Incident Response (Tier 2)
 
 ## Overview
-This playbook guides the response to suspected or confirmed phishing incidents. It outlines the specific evidence required, internal communication steps, and the execution of technical skills to contain and eradicate the threat.
+
+Playbook Tier 2 xu ly su co phishing: thu thap bang chung, xac dinh pham vi,
+xep phan cap, va **de xuat** cac hanh dong ngan chặn cho den khi co xac nhan.
+
+Noi dung ky thuat hien co duoc giu nguyen, chi tach phan tinh/the va tai
+`references/response-procedure.md`.
 
 ## When to Use
-Triggered by the **Master Incident Triage** playbook when an incident is classified as Phishing (Credential Harvesting, Malware Delivery via Email, BEC).
 
----
+- Nguoi dung bao cao email nghi ngo phishing, trang thu thong tin xac thuc gia, hoac
+  tep dinh kem doc hai.
+- Master triage da phan loai su co la phishing (credential harvesting, malware delivery
+  qua email, BEC) - xem `../playbook-master-incident-triage/SKILL.md`.
+- Mail gateway / SIEM / UEBA ghi nhan campaign phishing dang phat tan.
 
-## 1. Evidence Request Checklist (RFI)
-*Agent Action: Present this checklist to the user/SOC analyst to gather necessary information before deep analysis.*
+Khong dung skill nay khi:
 
-| Check | Evidence Type | Purpose | Source | Status |
-|---|---|---|---|:---:|
-| [ ] | **Full Email Source (EML/MSG)** | Trích xuất Headers, URLs, Payload HTML. | Exchange/O365, User Mailbox | Pending |
-| [ ] | **Attachments (Mã hóa ZIP)** | Phân tích file đính kèm độc hại (nếu có). | Extract từ EML | Pending |
-| [ ] | **Mail Gateway / Trace Logs** | Xác định bao nhiêu user đã nhận email này. | Mail Gateway / O365 Trace | Pending |
-| [ ] | **Web Proxy / Firewall Logs** | Kiểm tra user nào đã Click/Truy cập link độc hại. | Proxy/NGFW Logs | Pending |
-| [ ] | **User Context / Interview** | User có nhập mật khẩu hay tải file không? | Helpdesk / Phỏng vấn | Pending |
+- Da xac nhan mot vector khac phai phishing (vi du chi rom ransomware) - chay Tier 3
+  phu hop.
+- Yeu cau la reverse engineering malware hoac phan tich binary mau.
+- Yeu cau la dieu tra loi vao khong qua email.
 
----
+## Prerequisites
 
-## 2. Internal Communication Plan
-*Quy trình báo cáo và liên lạc nội bộ khi xử lý sự cố.*
+- Email goc (EML/MSG) cua thong bao, hoac ban trich xuat tu mail gateway.
+- Mail gateway / O365 trace log de xac dinh so nguoi nhan.
+- Web proxy / firewall log de xac dinh click va submit.
+- Nguoi dung bi anh huong (hoac phong van) xac nhan co nhap mat khau / tai file khong.
+- Truong du lieu (cot) cua tung nguon log de phan tich dung.
 
-*   **T+15 Phút (Phát hiện):**
-    *   Thông báo cho Helpdesk: *"Đang có chiến dịch phishing, tạm thời không reset password hàng loạt cho đến khi có danh sách user bị ảnh hưởng."*
-*   **T+1 Giờ (Phân tích & Ngăn chặn ban đầu):**
-    *   Báo cáo IT Ops: Cung cấp danh sách IP/Domain/Sender Email để đưa vào Blacklist.
-*   **T+4 Giờ (Đánh giá mức độ):**
-    *   Báo cáo CISO / Ban Giám đốc: Nếu có nhân viên đã nhập mật khẩu (Compromised) và có nguy cơ lộ lọt dữ liệu nội bộ/khách hàng.
+**STOP rule:** Neu thieu mot dieu kien bat buoc o tren, dung tai buoc do, khong phan tich tiep.
+Tra `insufficient_evidence` va liet ke artefact con thieu theo Rules dong 1-2.
+Neu chi thieu email goc, van phan tich phan tinh tach (header, URL, hash) va ghi
+`insufficient_evidence` cho pham vi phat tan.
 
----
+## Execution Steps
 
-## 3. Interim Recommendations (Khuyến nghị Tạm thời)
-*Thực hiện ngay trong khi thu thập bằng chứng.*
+### Step 1: Thu thap bang chung
 
-1. **Cô lập User:** Tạm thời vô hiệu hóa (Disable) tài khoản Active Directory / O365 của user đã báo cáo hoặc user nghi ngờ click link.
-2. **Cảnh báo toàn công ty (Tùy chọn):** Gửi email cảnh báo khẩn cấp không mở email có tiêu đề `[Subject của Phishing]`.
+Trinh bay checklist RFI tai `references/rfi-checklist.md` cho nguoi dung / SOC.
+Cap nhat trang thai tung muc (Pending / Done / NOT_AVAILABLE).
 
----
+### Step 2: Phan tich email
 
-## 4. Execution Steps (Các bước Phân tích Kỹ thuật)
-*Agent Action: Execute these steps once evidence from Section 1 is provided.*
+Tach header, URL, hash tep dinh kem; kiem tra SPF / DKIM / DMARC. Chi tiet:
+`references/response-procedure.md`.
 
-### Step 4.1: Analyze Email Headers & Body (Identification)
-*Sử dụng kỹ năng trích xuất thông tin tĩnh từ file EML.*
-*   Trích xuất `Sender IP`, kiểm tra SPF/DKIM/DMARC.
-*   Trích xuất tất cả URLs trong Body.
-*   Trích xuất Hash của tệp đính kèm.
+### Step 3: Xac dinh pham vi
 
-### Step 4.2: Scope Determination
-Dựa vào Mail Trace Logs và Proxy Logs:
-*   [ ] Tổng số email phát tán?
-*   [ ] Số lượng user đã Click?
-*   [ ] Số lượng user đã Submit thông tin (POST request)?
+Do so email phat tan, so user click, so user submit thong tin, so tai khoan bi chiem.
+Khong uoc luong: thieu log -> `[NOT_AVAILABLE]`.
 
-### Step 4.3: Containment (Ngăn chặn)
-Cung cấp lệnh hoặc danh sách IOCs cho Network Team:
-| Lớp | Hành động (Action) | Priority |
-|---|---|---|
-| **Email Gateway** | Block Sender Domain/IP, Block Subject. | P1 |
-| **Network (Proxy/FW)** | Block Malicious URLs/Domains. | P1 |
-| **Identity (AD)** | Force Password Reset, Revoke Sessions cho compromised users. | P1 |
+### Step 4: Xep phan cap
 
-### Step 4.4: Eradication (Loại bỏ)
-```powershell
-# Ví dụ lệnh xóa email trên Exchange/O365 (Search & Purge)
-Search-Mailbox -SearchQuery "Subject:'[Tiêu đề Phishing]'" -DeleteContent
-```
+- Xep phan cap theo bang trong `../_shared/severity-and-escalation.md`
+  (P1 Critical / P2 High / P3 Medium / P4 Low).
+- Phan cap = muc cao nhat trong cac dieu kien; khong ha cap; "chua xac nhan" khong duoc
+  nang len muc cao khi chi co nghi ngo.
+- Ghi ro dieu kien da chung minh.
+- Nguong cua skill: `references/thresholds.md`.
 
----
+### Step 5: De xuat ngan chặn
 
-## 5. Expected Output / Reporting
-*Agent Action: After executing steps, generate a structured JSON report.*
+Dung bang lop ngan chặn (email gateway, mang, identity) trong
+`references/response-procedure.md`. Chi de xuat, khong chay tu dong (Rules dong 6).
+
+### Step 6: De xuat loai bo va khoi phuc
+
+Mau lenh search-and-purge va ke hoach truyen thong noi bo trong
+`references/response-procedure.md`. Can xac nhan cua nguoi dung truoc khi chay.
+
+### Step 7: Bao cao
+
+Sinh bao cao theo mau `references/report-template.md`.
+
+## Expected Output
+
+1. **Bao cao** (markdown): tom tat, pham vi, phan cap P1-P4 theo
+   `../_shared/severity-and-escalation.md`, danh sach IOC, hanh dong de xuat,
+   artefact con thieu. Mau: `references/report-template.md`.
+2. **JSON** (fenced):
 
 ```json
 {
-  "incident_id": "PHISH-YYYYMMDD",
-  "status": "Contained/Investigating",
-  "metrics": {
-    "total_received": 0,
-    "total_clicked": 0,
-    "compromised_accounts": 0
+  "skill": "playbook-phishing-response",
+  "status": "ok|insufficient_evidence",
+  "scope": {
+    "total_received": null,
+    "total_clicked": null,
+    "total_submitted": null,
+    "compromised_accounts": null
   },
-  "extracted_iocs": {
+  "summary": {},
+  "findings": [],
+  "indicators": {
     "sender_ips": [],
     "domains": [],
     "urls": [],
     "file_hashes": []
   },
-  "remediation_status": {
-    "gateway_blocked": false,
-    "emails_purged": false,
-    "passwords_reset": false
-  }
+  "severity": "P1|P2|P3|P4",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": []
 }
 ```
+
+Vi du mau cua skill nay: `references/report-template.md`.
+
+## References
+
+- `references/thresholds.md` - nguong phan cap va nguong phat hien so luong.
+- `references/rfi-checklist.md` - checklist bang chung can thu thap.
+- `references/response-procedure.md` - quy trinh phan tich, ngan chặn, loai bo, truyen thong.
+- `references/report-template.md` - mau bao cao.
+- `../_shared/severity-and-escalation.md` - thang phan cap P1-P4 (nguon duy nhat).
+- `../_shared/compliance-vietnam.md` - moc thoi gian phap ly (nguon duy nhat).
+- `../_shared/off-hours-and-baseline.md` - gio lam viec, timezone, baseline.
+- `../_shared/mitre-nist-mapping.md` - ID MITRE ATT&CK v18 va NIST CSF 2.0 hop le.
+- `../playbook-master-incident-triage/SKILL.md` - entry point phan loai su co.
 
 ## Rules (bat buoc)
 

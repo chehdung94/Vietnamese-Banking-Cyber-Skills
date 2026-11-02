@@ -1,16 +1,17 @@
 ---
 name: playbook-pre-departure-insider-review
-description: "Review a departing employee access, mail, and file activity before the account is disabled. Use when HR provides a departure date and the team must assess data-exfiltration risk before cutoff. Reuses the shared scoring matrix from playbook-abnormal-user-behavior-response."
+description: "Review a departing employee's access, mail, and file activity before the account is disabled and assess data-exfiltration risk before cutoff. Use when HR provides a departure date and the team must review sensitive-data access. Not for daily watchlist monitoring or active incident response."
 allowed-tools:
   - Read
   - Grep
   - Glob
 license: Apache-2.0
 compatibility: droid
-version: 2.0.0
+version: 2.1.0
 domain: cybersecurity
 subdomain: insider-threat
-mitre_attack: [T1048, T1074, T1114, T1530]
+mitre_attack: [T1048, T1074, T1114, T1530, T1567.002]
+nist_csf: [DE.CM-3, DE.AE-1, PR.AA-05, RS.MI-1]
 tags:
   - playbook
   - tier-2
@@ -25,154 +26,156 @@ metadata:
   source: local
 ---
 
-# Playbook: Pre-Departure Insider Risk Review (Tier 2) 🆕
+# Playbook: Pre-Departure Insider Risk Review (Tier 2)
 
 ## Overview
-This playbook guides the pre-departure compliance review of departing employees who have access to sensitive data or systems. It provides a structured approach to detect potential data exfiltration before the employee's last working day.
 
-This playbook was developed based on Case Study PREDEP-20260429-001 (Vietbank – 2 departing department heads in Card Operations/Digital Banking).
+Playbook Tier 2 phuc vu review phong ngan phap cho nhan vien sap nghi viec, nhung nhan vien
+duoc cap quyen truy cap du lieu nhay hoac he thong quan trong. Muc tieu: phat hien dau hieu
+rut du lieu truoc khi account bi vo hieu hoa.
+
+Noi dung dung de tham chu (case study): PREDEP-20260429-001 - hai truong phong Card
+Operations / Digital Banking cua ngan hang Vietbank.
+
+Nguyen tac chinh:
+- Review nhan vien sap nghi viep co quyen du lieu nhay = **P2**
+  (`../_shared/severity-and-escalation.md`).
+- Ma tran 7 chi bao chi **xep hang** rui ro, khong phai phan cap su co.
+- Khung dieu tra lay tu
+  `../playbook-daily-watchlist-monitoring/references/tier_flow.md`.
 
 ## When to Use
-- HR notification of employee resignation with access to customer data or sensitive systems
-- Compliance/Legal preventive review request for offboarding
-- Multiple employees from same department departing simultaneously (collusion risk)
-- Pre-departure baseline assessment for risk scoring
 
-## 0. Mandatory Prerequisites
+- HR thong bao nhan vien nghi viep va nhan vien do co quyen truy cap du lieu khach hang hoac
+  he thong nhay.
+- Compliance / Legal yeu cau review phong ngan phap truoc khi offboarding.
+- Nhieu nhan vien cung phong ban nghi viep dong thoi (rui ro keo theo).
+- Can danh gia rui ro rut du lieu truoc moc cutoff cua account.
 
-> **⚠️ KHÔNG TIẾN HÀNH PHÂN TÍCH nếu thiếu các thông tin sau. Yêu cầu bổ sung từ request owner.**
+Khong dung skill nay khi:
 
-| # | Prerequisite | Source | Required For |
-|---|---|---|---|
-| 1 | User real identity (email, username, employee ID) | HR / IAM | User identification |
-| 2 | **Resignation notice date** | HR | Baseline comparison (pre vs post notice) |
-| 3 | **Planned last working date** | HR | Risk window assessment |
-| 4 | Access profile (AD groups, app roles, data permissions) | IAM | Sensitive data assessment |
-| 5 | Performance/disciplinary history | HR | Job Performance Issues indicator |
-| 6 | Log schema for each source (column names, data types) | Log Owner | Analysis planning |
+- Chay dot giam sat watchlist hang ngay - dung
+  `../playbook-daily-watchlist-monitoring/SKILL.md`.
+- Da co su co dang dien ra (du lieu da bi rut, tai khoan bi chiem) - dung
+  `../playbook-abnormal-user-behavior-response/SKILL.md`.
+- Su co khong lien quan hanh vi nhan vien (vi du phishing hang loat).
 
-## 1. Pre-Analysis Setup
+## Prerequisites
 
-### 1.1 Domain Whitelist
+- Danh tinh nguoi dung that: email, ten dang nhap, ma nhan vien (HR / IAM).
+- Ngay nop don nghi viep (HR).
+- Ngay nghi thuc te duoc duyet (HR).
+- Ho so quyen truy cap: nhom AD, vai tro ung dung, quyen du lieu (IAM).
+- Lich su hieu nang va ky luat (HR) cho chi bao Job Performance Issues.
+- Schema du lieu (ten cot) cua tung nguon log.
+- Baseline de so sanh hanh voi nguoi dung (neu co).
 
-Before analyzing email logs, establish a whitelist of business-justified external domains:
+**STOP rule:** Neu thieu mot dieu kien bat buoc o tren, dung tai buoc do, khong phan tich tiep.
+Tra `insufficient_evidence` va liet ke artefact con thieu theo Rules dong 1-2.
+Neu thieu baseline, van phan tich phan dinh tinh va ghi `insufficient_evidence` cho phan
+mu/sigma; khong uoc luong (`../_shared/off-hours-and-baseline.md`).
 
-| Category | Examples |
-|---|---|
-| Banking Partners | bidv.com.vn, sacombank.com, vietcombank.com.vn, napas.com.vn... |
-| Known Vendors | microsoft.com, service providers |
-| Regulators | sbv.gov.vn, nhnn.gov.vn |
+## Execution Steps
 
-### 1.2 Off-Hours Definition
+### Step 1: Chuan bi pham vi
 
-- Before 07:00 or after 18:00 on weekdays
-- Any time on weekends/holidays
-- Adjust based on company policy
+- Chot khung dieu tra: ngay nop don -> ngay nghi thuc te, kem buffer theo doi.
+- Chot domain whitelist cho email.
+- Dinh nghia ngoai gio theo `../_shared/off-hours-and-baseline.md`.
+- Chi tiet va nguong: `references/thresholds.md`.
 
-## 2. Multi-Channel Analysis
+### Step 2: Phan tich da kenh
 
-### 2.1 Email Analysis (Mandatory)
+Chay cac kenh bat buoc (email, web gateway / DLP, device control, endpoint security) va
+kenh VPN co dieu kien. Quy trinh chi tiet tai `references/analysis-procedure.md`.
 
-Reference Tier 3 skill: `analyzing-email-audit-logs`
+Tier 3: `../analyzing-email-audit-logs/SKILL.md`, `../analyzing-dlp-alerts/SKILL.md`,
+`../analyzing-vpn-logs/SKILL.md`.
 
-**Quy trình bắt buộc:**
-1. Thiết lập domain whitelist (banking partners, vendors)
-2. Phân loại email theo hướng (INBOUND/OUTBOUND) – Section 2B
-3. Phát hiện standalone Gmail emails – Section 2D
-4. Cross-user correlation nếu ≥2 users – Section 2E
-5. Phân tích attachment (size, type, frequency)
+### Step 3: Phat hien keo theo
 
-### 2.2 Web Gateway Analysis (Mandatory)
+Khi co tu 2 nhan vien sap nghi viep: quy trinh cross-mailbox, timeline correlation,
+shared resources. Chi bao: `../playbook-abnormal-user-behavior-response/references/collusion-and-dlp.md`.
 
-Reference Tier 3 skill: `analyzing-dlp-alerts`
+### Step 4: Danh gia rui ro
 
-**Focus areas:**
-- Personal cloud storage: `onedrive.live.com`, `drive.google.com`, `dropbox.com`
-- Personal webmail: `mail.google.com`, `mail.yahoo.com`
-- Social media uploads
-- File sharing sites
+- Ap dung ma tran 7 chi bao tai
+  `../playbook-abnormal-user-behavior-response/references/indicators.md`, kem calibration
+  rieng cho boi canh nghi viep.
+- Xep hang Jev chi la xep hang.
 
-### 2.3 Device Control Analysis (Mandatory)
+### Step 5: Xep phan cap su co
 
-Reference Tier 3 skill: `analyzing-dlp-alerts`
+- Xep phan cap theo `../_shared/severity-and-escalation.md`
+  (P1 Critical / P2 High / P3 Medium / P4 Low).
+- Review nhan vien sap nghi viep co quyen du lieu nhay = **P2**.
+- Phan cap = muc cao nhat trong cac dieu kien; khong ha cap; "chua xac nhan" khong duoc
+  nang len muc cao khi chi co nghi ngo.
+- Ghi ro dieu kien da chung minh trong bao cao.
 
-**Focus areas:**
-- USB storage devices (Disk Drives)
-- External HDD/SSD
-- MTP devices (phones)
-- Network adapters (potential data transfer)
+### Step 6: De xuat hanh dong
 
-### 2.4 Endpoint Security Analysis (Mandatory)
+De xuat hanh dong kiem so (go quyen, tang cuong giam sat, chuyen quyen so huu) va hanh
+dong phoi hop voi HR / Legal. Chi de xuat, khong chay tu dong (Rules dong 6).
 
-**Focus areas:**
-- Malware/Virus events (magnitude ≥7)
-- Access Protection rule violations
-- OUTGOING_HTTP policy violations
-- Web policy violations
+### Step 7: Bao cao
 
-### 2.5 VPN Analysis (Conditional)
+Sinh bao cao theo mau `references/report-template.md`.
 
-Reference Tier 3 skill: `analyzing-vpn-logs`
+## Expected Output
 
-**Chỉ phân tích nếu:** Đáp ứng ≥3/5 tiêu chí trong Value Assessment của VPN skill.
+1. **Bao cao** (markdown): executive summary, ho so nguoi dung, pham vi log, findings
+   theo tung nguon, timeline, cross-user correlation, risk scoring, danh gia hieu luc DLP,
+   ket luan va khuyen nghia. Phan cap P1-P4 theo
+   `../_shared/severity-and-escalation.md`. Mau: `references/report-template.md`.
+2. **JSON** (fenced):
 
-## 3. Cross-User Collusion Detection
-
-> **Kích hoạt:** Khi có ≥2 departing employees, đặc biệt nếu cùng phòng ban.
-
-**Quy trình:**
-1. Kiểm tra email communication giữa các user
-2. Cross-mailbox: Tìm Gmail cá nhân của User A trong recipients của User B
-3. Timeline correlation: coordinated off-hours activity
-4. Shared resource access patterns
-
-## 4. Risk Assessment
-
-Apply **Risk Indicators Matrix** from `playbook-abnormal-user-behavior-response` §3.1.
-
-### Scoring Calibration (Pre-Departure Context)
-
-| Indicator | Specific Considerations for Pre-Departure |
-|---|---|
-| Recent HR Event | Score based on resignation context: voluntary? performance-related? |
-| Access to Sensitive Data | Department heads = elevated access by default |
-| Personal Device Usage | DLP BLOCKED vs ALLOWED – different scoring |
-| External Communication | Standalone emails = strongest indicator |
-
-### DLP Effectiveness Assessment
-
-Evaluate each protection layer:
-- ✅ Blocked successfully → DLP working
-- ❌ Allowed without policy → DLP gap
-- ⚠️ Detected but not blocked → partial protection
-
-## 5. Output Templates
-
-### 5.1 Executive Summary
-```markdown
-## Báo cáo Pre-Departure Review
-- User: [Name] | Risk Score: X | Classification: CRITICAL/HIGH/MEDIUM/LOW
-- Key Findings: [Top 3]
-- DLP Gaps Identified: [List]
-- Recommendation: [Action]
+```json
+{
+  "skill": "playbook-pre-departure-insider-review",
+  "status": "ok|insufficient_evidence",
+  "scope": {
+    "user": "[user]",
+    "department": "[department]",
+    "resignation_date": "[date]",
+    "last_working_date": "[date]",
+    "investigation_window": "[start] -> [end]"
+  },
+  "summary": {},
+  "findings": [],
+  "indicators": {
+    "risk_indicators": {},
+    "exfiltration_indicators": {},
+    "dlp_gaps": []
+  },
+  "jev_rank": "Critical|High|Medium|Low",
+  "jev_rank_note": "Jev chi xep hang, khong phai phan cap su co",
+  "severity": "P1|P2|P3|P4",
+  "severity_evidence": [],
+  "recommended_actions": [],
+  "missing_artifacts": [],
+  "skipped_analyses": []
+}
 ```
 
-### 5.2 Investigation Report Structure
-1. Executive Summary
-2. User Profile
-3. Log Scope & Methodology
-4. Findings per Source
-5. Timeline Synthesis
-6. Cross-User Correlation (if applicable)
-7. Risk Scoring
-8. DLP Effectiveness Assessment
-9. Conclusion & Recommendations
+Vi du mau cua skill nay: `references/report-template.md`.
 
-## Related Skills
-- [`playbook-abnormal-user-behavior-response`](../playbook-abnormal-user-behavior-response/SKILL.md) – General insider threat investigation
-- [`playbook-master-incident-triage`](../playbook-master-incident-triage/SKILL.md) – Tier 1 classification
-- [`analyzing-email-audit-logs`](../analyzing-email-audit-logs/SKILL.md) – Tier 3 email analysis
-- [`analyzing-dlp-alerts`](../analyzing-dlp-alerts/SKILL.md) – Tier 3 DLP analysis
+## References
+
+- `references/thresholds.md` - khung dieu tra, nguong kenh phan tich, whitelist, nguon phan cap.
+- `references/analysis-procedure.md` - quy trinh phan tich theo kenh va calibration rieng.
+- `references/report-template.md` - mau bao cao.
+- `../playbook-abnormal-user-behavior-response/SKILL.md` - ma tran 7 chi bao, chung thuc.
+- `../playbook-master-incident-triage/SKILL.md` - Tier 1 phan loai su co.
+- `../playbook-daily-watchlist-monitoring/SKILL.md` - chay dot giam sat watchlist.
+- `../playbook-daily-watchlist-monitoring/references/tier_flow.md` - cau truc 3 tier, khung dieu tra.
+- `../_shared/severity-and-escalation.md` - thang phan cap P1-P4 (nguon duy nhat).
+- `../_shared/compliance-vietnam.md` - moc thoi gian phap ly (nguon duy nhat).
+- `../_shared/off-hours-and-baseline.md` - gio lam viec, timezone, baseline mu/sigma.
+- `../_shared/mitre-nist-mapping.md` - ID MITRE ATT&CK v18 va NIST CSF 2.0 hop le.
+- `../analyzing-email-audit-logs/SKILL.md` - Tier 3 phan tich email.
+- `../analyzing-dlp-alerts/SKILL.md` - Tier 3 phan tich DLP.
+- `../analyzing-vpn-logs/SKILL.md` - Tier 3 phan tich VPN.
 
 ## Rules (bat buoc)
 
