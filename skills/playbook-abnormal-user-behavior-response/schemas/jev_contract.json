@@ -1,0 +1,121 @@
+{
+  "contract_version": "1",
+  "model": "jev-1.13.0",
+  "merge": "max(rule_level, jev_level)",
+  "calibrated": false,
+  "thresholds": {
+    "rule_level_floor": null,
+    "sev_floor": null,
+    "noul_review": null,
+    "score_review": null,
+    "_not_set_reason": "Khong dat nguong so: chua co bang chung du lieu du de tach nhom trong repo. Bang nguong phat hien nam tai references/thresholds.md; muc phan cap P1-P4 lay tu ../_shared/severity-and-escalation.md.",
+    "_pointer": "references/thresholds.md"
+  },
+  "threshold_note": "calibrated=false -> Jev CHI xep hang (rank) va KHONG bao gio nang muc phan cap su co. Xep hang Jev chi sap xep thu tu uu tien dieu tra. Muc do phan cap chi lay tu ../_shared/severity-and-escalation.md va bang nguong cua skill trong references/thresholds.md. Doi model -> phai chot lai va ghi nguon.",
+  "display": {
+    "hr_context": "Su kien HR",
+    "data_scope": "Ngoai pham vi cong viec",
+    "volume_anomaly": "Luong du lieu bat thuong",
+    "off_hours_human": "Ngoai gio la do nguoi",
+    "staging_and_send": "Gom va gui du lieu",
+    "behavior": "Dang hanh vi",
+    "jev_rank": "Thu tu dieu tra",
+    "binh_thuong": "Binh thuong",
+    "nguoi_thao_tac": "Nguoi dang thao tac",
+    "dong_bo": "Giong dong bo",
+    "dang_nhap_cu": "Dang nhap cu",
+    "don_du_lieu": "Don du lieu",
+    "xem_trong_ngay": "Xem trong ngay",
+    "xem_ngay": "Xem ngay",
+    "theo_doi": "Theo doi"
+  },
+  "profile_fields": [
+    "user",
+    "dept",
+    "title",
+    "disable_date_k",
+    "active_after_disable",
+    "days_after_disable",
+    "last_success_vn",
+    "ad_success",
+    "ad_fail",
+    "entra_success",
+    "entra_fail",
+    "off_hours_auth",
+    "mail_sent",
+    "mail_deleted",
+    "mail_off_hours",
+    "mail_external",
+    "mail_freemail",
+    "mail_freemail_with_attachment",
+    "fs_total",
+    "fs_deleted",
+    "fs_off_hours",
+    "fs_sensitive",
+    "file_names",
+    "rule_level",
+    "rule_alerts"
+  ],
+  "questions": {
+    "hr_context": {
+      "type": "noul",
+      "instructions": "Do the HR records show an event close to this activity that changed what the user was expected to do in this window?",
+      "criteria": {
+        "co": "Resignation, disciplinary action, role change, leave of absence or other HR event is recorded in the same window.",
+        "khong": "No HR event is recorded for this user in the window, or the records were not provided."
+      }
+    },
+    "data_scope": {
+      "type": "noul",
+      "instructions": "Do the accessed files and folders fall outside the user's normal job responsibilities, without a business justification in the records?",
+      "criteria": {
+        "co": "Access touches customer PII, financial data, salary or other restricted folders that the job profile does not justify.",
+        "khong": "Access stays inside folders and file types that match the role, or the records do not allow a comparison."
+      }
+    },
+    "volume_anomaly": {
+      "type": "noul",
+      "instructions": "Does the file or data volume of this window exceed the user's own baseline for the same activity?",
+      "criteria": {
+        "co": "The measured volume exceeds the threshold defined in references/thresholds.md for that activity.",
+        "khong": "The volume stays inside the threshold, or no baseline file was provided so the comparison could not be made."
+      }
+    },
+    "off_hours_human": {
+      "type": "noul",
+      "instructions": "Do the off-hours counts look like a person acting, rather than directory sync or an unattended service?",
+      "criteria": {
+        "co": "Off-hours activity is combined with successful human actions such as file opens, mail sends or downloads.",
+        "khong": "Off-hours entries are authentication failures only, service accounts, or a synchronisation pattern without human actions."
+      }
+    },
+    "staging_and_send": {
+      "type": "noul",
+      "instructions": "Do the file counts and mail activity look like bulk copy or deletion of work files, or files sent to a personal mailbox?",
+      "criteria": {
+        "co": "There is bulk deletion or reading of work files together with mail sent to a personal mailbox, with or without attachments.",
+        "khong": "No bulk staging and no mail to a personal mailbox is recorded, or the logs do not cover mail and files together."
+      }
+    },
+    "behavior": {
+      "type": "choice",
+      "instructions": "Which pattern best fits this profile?",
+      "criteria": {
+        "binh_thuong": "ordinary work inside the bank, no personal mailbox and no bulk delete",
+        "dong_bo": "directory or mailbox sync, high Entra volume without mail or file actions by a person",
+        "dang_nhap_cu": "failures on a disabled account with no successful new activity",
+        "nguoi_thao_tac": "a person acting off-hours or after the disable date",
+        "don_du_lieu": "deleting or sending files and mail together, including sends to a personal mailbox"
+      }
+    },
+    "jev_rank": {
+      "type": "score",
+      "instructions": "How soon should an analyst open this profile? The rule floor already applies; this score only ranks the profile and never raises severity.",
+      "criteria": [
+        "theo doi: no extra review beyond the rule floor",
+        "xem trong ngay: open after the hard-rule queue",
+        "xem ngay: open together with the hard-rule queue"
+      ]
+    }
+  }
+}
